@@ -1,0 +1,3316 @@
+:root {
+  --bg: #071319;
+  --panel: #0f1b22;
+  --panel-2: #162730;
+  --panel-3: #1b313c;
+  --panel-soft: rgba(15, 27, 34, 0.78);
+  --panel-glass: rgba(255, 255, 255, 0.045);
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #eef7f4;
+  --muted: #8ea6af;
+  --muted-strong: #c5d5dc;
+  --brand: #3ddc84;
+  --brand-deep: #138a73;
+  --brand-glow: rgba(61, 220, 132, 0.24);
+  --blue-glow: rgba(92, 195, 255, 0.2);
+  --bubble-me: #0a6b57;
+  --bubble-other: #1b2c35;
+  --page-bg:
+    radial-gradient(circle at top, rgba(61, 220, 132, 0.18), transparent 28%),
+    radial-gradient(circle at 90% 15%, rgba(92, 195, 255, 0.09), transparent 24%),
+    linear-gradient(180deg, #061015, #0a161c 24%, #10232b);
+  font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
+  color: var(--text);
+  background: var(--page-bg);
+}
+
+[data-theme="light"] {
+  --bg: #eef4f6;
+  --panel: #ffffff;
+  --panel-2: #edf3f5;
+  --panel-3: #dde8ec;
+  --panel-soft: rgba(255, 255, 255, 0.82);
+  --panel-glass: rgba(255, 255, 255, 0.72);
+  --line: rgba(12, 40, 49, 0.12);
+  --line-strong: rgba(12, 40, 49, 0.2);
+  --text: #14252d;
+  --muted: #58707b;
+  --muted-strong: #31434c;
+  --brand: #1ca86a;
+  --brand-deep: #0b7d56;
+  --brand-glow: rgba(28, 168, 106, 0.2);
+  --blue-glow: rgba(75, 154, 255, 0.14);
+  --bubble-me: #d4f6e6;
+  --bubble-other: #ffffff;
+  --page-bg:
+    radial-gradient(circle at top, rgba(28, 168, 106, 0.1), transparent 28%),
+    radial-gradient(circle at 90% 15%, rgba(75, 154, 255, 0.08), transparent 24%),
+    linear-gradient(180deg, #f4f9fb, #edf4f6 24%, #e3edf1);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; height: 100%; }
+body { margin: 0; overscroll-behavior-y: none; overflow: hidden; }
+button, input, textarea { font: inherit; }
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 15% 18%, rgba(61, 220, 132, 0.14), transparent 20%),
+    radial-gradient(circle at 85% 12%, rgba(92, 195, 255, 0.12), transparent 18%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: auto, auto, 36px 36px, 36px 36px;
+  opacity: 0.48;
+  z-index: -1;
+}
+
+[data-theme="light"] body::before {
+  opacity: 0.22;
+}
+
+.shell, .authShell { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 12px; }
+
+.authDesktop { background: radial-gradient(circle at top, rgba(0, 160, 78, 0.15), transparent 35%), linear-gradient(180deg, #0a1a20, #0f1a23); }
+.authMobile { background: radial-gradient(circle at top, rgba(37, 211, 102, 0.14), transparent 30%), linear-gradient(180deg, #0d1f24, #0f1e26); }
+[data-theme="light"] .authDesktop,
+[data-theme="light"] .authMobile {
+  background:
+    radial-gradient(circle at top, rgba(28, 168, 106, 0.08), transparent 35%),
+    linear-gradient(180deg, #eef6f8, #e6f0f3);
+}
+.phoneFrame, .authPanel {
+  width: min(460px, 100%);
+  min-height: min(920px, 100vh - 24px);
+  min-height: min(920px, 100dvh - 24px);
+  background: linear-gradient(180deg, #0f1f25, #0b141a 18%, #0b141a);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+}
+[data-theme="light"] .phoneFrame,
+[data-theme="light"] .authPanel,
+[data-theme="light"] .authHeroPanel,
+[data-theme="light"] .authGlass,
+[data-theme="light"] .authFormCard,
+[data-theme="light"] .waShell,
+[data-theme="light"] .waWorkspace,
+[data-theme="light"] .waRail,
+[data-theme="light"] .waWindowBar,
+[data-theme="light"] .chatSidebarPane,
+[data-theme="light"] .chatConversationPane,
+[data-theme="light"] .accountSidebar,
+[data-theme="light"] .accountContent,
+[data-theme="light"] .messagesPane {
+  color: var(--text);
+}
+
+[data-theme="light"] .phoneFrame,
+[data-theme="light"] .authPanel {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(75, 154, 255, 0.08), transparent 26%),
+    radial-gradient(circle at top right, rgba(28, 168, 106, 0.1), transparent 24%),
+    linear-gradient(180deg, #f6fbfc, #edf4f6 20%, #edf4f6);
+}
+
+[data-theme="light"] .authHeroPanel,
+[data-theme="light"] .authGlass,
+[data-theme="light"] .authFormCard,
+[data-theme="light"] .waRail,
+[data-theme="light"] .waWindowBar,
+[data-theme="light"] .chatSidebarPane,
+[data-theme="light"] .chatConversationPane,
+[data-theme="light"] .accountSidebar,
+[data-theme="light"] .accountContent,
+[data-theme="light"] .messagesPane {
+  background-color: rgba(255, 255, 255, 0.94);
+}
+
+[data-theme="light"] .messagesPane {
+  background:
+    radial-gradient(circle at 20px 20px, rgba(18, 44, 56, 0.05) 0, rgba(18, 44, 56, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 70px 70px, rgba(18, 44, 56, 0.04) 0, rgba(18, 44, 56, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(245, 250, 251, 0.96), rgba(236, 244, 246, 0.98));
+}
+
+[data-theme="light"] .theirs,
+[data-theme="light"] .callEventBubble,
+[data-theme="light"] .chatCard,
+[data-theme="light"] .contactRow,
+[data-theme="light"] .callRow,
+[data-theme="light"] .settingsNavItem,
+[data-theme="light"] .accountQuickCard,
+[data-theme="light"] .accountInfoCard,
+[data-theme="light"] .accountNotice,
+[data-theme="light"] .settingsShortcutIcon {
+  background: rgba(255, 255, 255, 0.86);
+}
+
+[data-theme="light"] .mine {
+  background: linear-gradient(180deg, #c7efd8, #b6e8cf);
+  color: #143327;
+}
+.phoneFrame {
+  width: 100%;
+  min-height: 100svh;
+  min-height: 100dvh;
+  height: auto;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(92, 195, 255, 0.12), transparent 26%),
+    radial-gradient(circle at top right, rgba(61, 220, 132, 0.14), transparent 24%),
+    linear-gradient(180deg, #101d23, #09141a 20%, #09141a);
+  position: relative;
+}
+.authPanel {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  max-width: 460px;
+  width: 100%;
+}
+.authHeroPanel {
+  display: grid;
+  gap: 14px;
+  background: rgba(15, 31, 35, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 16px;
+}
+.authFormCard {
+  background: rgba(4, 20, 23, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 16px;
+}
+.authFormHeader strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+.authFormHeader span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.authSection {
+  display: grid;
+  gap: 12px;
+}
+.authCaption {
+  font-size: 0.825rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #8ef0c4;
+}
+.authBadge {
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+.showcaseCard {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(14, 38, 43, 0.5);
+}
+.showcaseCard strong {font-size: 0.95rem;}
+.showcaseCard span {color: var(--muted); font-size: 0.82rem;}
+
+.fullMobile {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 100svh;
+  min-height: 100dvh;
+  height: 100%;
+}
+
+.authPanel { padding: 22px; }
+.phoneCard { background: linear-gradient(180deg, #13232b, #0b141a 26%, #0b141a); }
+.avatarSize34 { width: 34px; height: 34px; }
+.avatarSize40 { width: 40px; height: 40px; }
+.avatarSize46 { width: 46px; height: 46px; }
+.avatarSize70 { width: 70px; height: 70px; }
+.avatarSize78 { width: 78px; height: 78px; }
+
+.loginHero, .mobileHeader, .rowStart, .cardMeta, .contactActions, .sectionTop, .statusHero, .profilePreview { display: flex; align-items: center; }
+.loginHero, .rowStart, .contactActions, .statusHero, .profilePreview { gap: 14px; }
+.mobileHeader, .sectionTop { justify-content: space-between; gap: 12px; }
+.loginHero { margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.loginHero h1, .sectionTop h2, .emptyPanel h3 { margin: 0; }
+.loginHero p, .emptyPanel p, .statusHero p, .profilePreview p, .statusCard p { margin: 6px 0 0; color: var(--muted); line-height: 1.4; }
+.loginHero h1 { font-size: 28px; letter-spacing: -0.02em; }
+.authHeroPanel {
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(37, 211, 102, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(20, 44, 38, 0.9), rgba(13, 24, 29, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.authGlass {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(7, 17, 21, 0.72);
+  backdrop-filter: blur(12px);
+}
+.mobileSectionNav {
+  display: none;
+}
+.authCaption {
+  color: #9de8b8;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+}
+.authBadgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.authBadge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #dff9e8;
+  font-size: 11px;
+  font-weight: 700;
+}
+.authStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+.authStat {
+  padding: 12px 10px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+.authStat strong {
+  font-size: 15px;
+  color: #f4fffa;
+}
+.authStat span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.authShowcase {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.showcaseCard {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(37, 211, 102, 0.09), rgba(17, 27, 33, 0.8)),
+    rgba(255, 255, 255, 0.02);
+  display: grid;
+  gap: 4px;
+}
+.showcaseCard strong { font-size: 14px; }
+.showcaseCard span { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.authSection {
+  display: grid;
+  gap: 14px;
+}
+.authFormCard {
+  padding: 16px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.authFormHeader {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+.authFormHeader strong {
+  font-size: 17px;
+}
+.authFormHeader span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.authHint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.authFooterNote {
+  margin-top: 14px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.fieldBlock {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.authFooterCopyright {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #9bb3c0;
+}
+
+.authPanel {
+  max-width: 540px;
+}
+
+@media (max-width: 768px) {
+  .authPanel, .phoneFrame {
+    width: min(100%, 100vw);
+    min-height: calc(100vh - 16px);
+    border-radius: 16px;
+    margin: 0;
+    box-shadow: none;
+  }
+  .authGlass, .authFormCard, .sheetCard, .screenPane {
+    border-radius: 14px;
+    padding: 12px;
+  }
+  .authFooterNote { font-size: 11px; }
+}
+
+.copyrightBar {
+  text-align: center;
+  color: #b1c9d4;
+  font-size: 11px;
+  margin: 8px 0 10px;
+}
+
+.waShell {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  height: 100svh;
+  height: 100dvh;
+  background: #111b21;
+}
+
+.waRail {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 12px;
+  padding: 12px 10px;
+  background: #202c33;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.waRailBrand,
+.waRailProfile {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.waRailBrand .waMark {
+  width: 42px;
+  height: 42px;
+  box-shadow: none;
+}
+
+.waRailBrand span {
+  font-size: 11px;
+  font-weight: 700;
+  color: #d9e4ea;
+}
+
+.waRailNav {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.waRailButton {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: #9fb1ba;
+  cursor: pointer;
+}
+
+.waRailButton:hover,
+.activeRailButton {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f2f7fa;
+}
+
+.waRailIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.activeRailButton .waRailIcon {
+  background: rgba(0, 168, 132, 0.22);
+  color: #dff9f0;
+}
+
+.waRailLabel {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.waRailBadge {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #00a884;
+  color: #041b15;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.waRailProfile {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.waWorkspace {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  min-height: 0;
+  background: #111b21;
+}
+
+.waWindowBar {
+  min-height: 34px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #202c33;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.waWindowMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.waWindowMeta .waMark {
+  width: 22px;
+  height: 22px;
+}
+
+.waWindowMeta span {
+  color: #f0f5f7;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.waWindowActions {
+  display: flex;
+  gap: 8px;
+}
+
+.waWindowAction {
+  min-width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #d9e4ea;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.waWindowAction:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.themeToggleAction {
+  min-width: 54px;
+}
+
+.closeWindowAction:hover {
+  background: rgba(230, 72, 72, 0.76);
+}
+
+.waContentStage {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+}
+
+.waPaneHeader {
+  margin-bottom: 10px;
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.waPaneActions {
+  display: flex;
+  gap: 8px;
+}
+
+.waPaneActionBtn {
+  min-width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #d9e4ea;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chatFilterRow {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 14px;
+  flex-wrap: wrap;
+}
+
+.chatSectionHeaderCopy {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+
+.chatFilterChip {
+  min-height: 32px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #c6d3da;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.activeFilterChip {
+  background: rgba(0, 168, 132, 0.2);
+  color: #e6fff7;
+  border-color: rgba(0, 168, 132, 0.24);
+}
+
+.workspaceShell {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 100%;
+  height: auto;
+}
+
+.workspaceSidebar {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 16px;
+  border-right: 1px solid var(--line);
+  background:
+    radial-gradient(circle at top left, rgba(61, 220, 132, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(10, 22, 28, 0.98), rgba(8, 17, 23, 0.98));
+}
+
+.workspaceBrandCard,
+.workspaceUserCard,
+.workspaceSearchCard,
+.workspaceRailCard {
+  padding: 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.025)),
+    rgba(255, 255, 255, 0.02);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.workspaceUserCard,
+.workspaceRailCard,
+.workspaceSearchCard {
+  display: grid;
+  gap: 12px;
+}
+
+.workspaceProfileBtn {
+  width: 100%;
+}
+
+.workspaceNavList,
+.workspaceQuickList {
+  display: grid;
+  gap: 10px;
+}
+
+.workspaceNavBtn,
+.workspaceQuickChat {
+  width: 100%;
+  text-align: left;
+}
+
+.workspaceNavBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.workspaceNavBtn small {
+  color: var(--muted);
+}
+
+.workspaceQuickChat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.workspaceQuickChat:hover {
+  border-color: rgba(61, 220, 132, 0.24);
+  transform: translateY(-1px);
+}
+
+.workspaceEmpty {
+  min-height: 92px;
+  display: grid;
+  place-items: center;
+}
+
+.networkCard {
+  gap: 10px;
+}
+
+.networkInfoGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.networkNote {
+  line-height: 1.45;
+}
+
+.workspaceMain {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto auto auto auto auto auto;
+  min-height: 0;
+  height: auto;
+  overflow: visible;
+}
+
+.appHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.appHeaderBrand,
+.headerPresence {
+  display: flex;
+  align-items: center;
+}
+
+.appHeaderBrand {
+  gap: 14px;
+}
+
+.headerPresence {
+  justify-content: flex-end;
+}
+.profileAvatarBtn,
+.avatarTrigger {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.profileAvatarBtn {
+  border-radius: 18px;
+}
+.profileAvatarBtn:hover,
+.avatarTrigger:hover {
+  filter: brightness(1.05);
+}
+
+.appHeader .waMark {
+  width: 58px;
+  height: 58px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
+}
+
+.appHeroBar {
+  margin: 14px 14px 0;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(61, 220, 132, 0.24), transparent 28%),
+    radial-gradient(circle at bottom left, rgba(92, 195, 255, 0.14), transparent 30%),
+    linear-gradient(145deg, rgba(20, 44, 51, 0.94), rgba(11, 20, 26, 0.98));
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.95fr);
+  gap: 20px;
+  animation: riseIn 0.55s ease-out;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 24px 64px rgba(0, 0, 0, 0.24);
+}
+
+.appHeroBar::after {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -80px;
+  top: -90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.appHeroBar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.06), transparent 20%),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: auto, 22px 22px, 22px 22px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.8), transparent 95%);
+}
+
+.heroGlow {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  filter: blur(18px);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.heroGlowLeft {
+  left: -60px;
+  bottom: -110px;
+  background: radial-gradient(circle, rgba(92, 195, 255, 0.26), transparent 66%);
+}
+
+.heroGlowRight {
+  right: 8%;
+  top: -120px;
+  background: radial-gradient(circle, rgba(61, 220, 132, 0.28), transparent 70%);
+}
+
+.heroCopy h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(1.5rem, 2.8vw, 2.5rem);
+  letter-spacing: -0.04em;
+  max-width: 13ch;
+}
+
+.heroCopy p {
+  margin: 0;
+  max-width: 62ch;
+  color: #bdd0d8;
+  line-height: 1.55;
+}
+
+.heroSignalRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.heroSignalChip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  color: var(--muted-strong);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.heroStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.heroStatCard,
+.commandCard {
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    rgba(255,255,255,0.02);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.heroStatCard:hover,
+.commandCard:hover {
+  transform: translateY(-3px);
+  border-color: rgba(61, 220, 132, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 14px 28px rgba(0, 0, 0, 0.16);
+}
+
+.heroStatCard::after,
+.commandCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(125deg, rgba(255,255,255,0.1), transparent 26%);
+}
+
+.heroStatCard strong {
+  display: block;
+  font-size: 1.4rem;
+  margin-bottom: 6px;
+}
+
+.heroStatCard span,
+.commandCard p {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.sectionSwitch {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 12px 14px 0;
+}
+
+.sectionSwitchBtn {
+  min-height: 58px;
+  padding: 10px 14px;
+  display: grid;
+  justify-items: start;
+  align-content: center;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sectionSwitchBtn:hover {
+  transform: translateY(-2px);
+}
+
+.sectionSwitchLabel {
+  font-weight: 700;
+}
+
+.sectionSwitchBtn small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.sectionSwitchBtn::after {
+  content: "";
+  position: absolute;
+  inset: auto -25% -40% auto;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(61, 220, 132, 0.16), transparent 68%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sectionSwitchBtn:hover::after,
+.sectionSwitchBtn.activeTab::after {
+  opacity: 1;
+}
+
+.commandCenter {
+  min-height: 320px;
+}
+
+.callHubScreen {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.commandCenterGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.callHistoryGrid {
+  display: grid;
+  grid-template-columns: 1.25fr 0.9fr 0.9fr;
+  gap: 14px;
+  margin-bottom: 14px;
+  align-items: start;
+}
+
+.callHistoryScrollArea {
+  max-height: min(62vh, 620px);
+  overflow: auto;
+  padding-right: 4px;
+  overscroll-behavior: contain;
+}
+
+.callHistoryPanel {
+  padding: 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.025)),
+    rgba(255, 255, 255, 0.02);
+  display: grid;
+  gap: 12px;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.callHistoryHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.callHistoryHeader strong {
+  font-size: 1rem;
+}
+
+.callHistoryHeader span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.callHistoryList,
+.callHistoryStack {
+  display: grid;
+  gap: 10px;
+  overflow: auto;
+  padding-right: 4px;
+  max-height: min(46vh, 480px);
+  overscroll-behavior: contain;
+}
+
+.callHistoryRow,
+.callSummaryCard {
+  width: 100%;
+  text-align: left;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.callHistoryRow {
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.callSummaryCard {
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.callHistoryRow:hover,
+.callSummaryCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(61, 220, 132, 0.24);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.16);
+}
+
+.callHistoryMetaLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.callStatusPill {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.callStatusPill.completed {
+  color: #b6f8d0;
+  background: rgba(61, 220, 132, 0.12);
+}
+
+.callStatusPill.missed,
+.missedSummaryCard {
+  color: #ffd5d5;
+  background: linear-gradient(135deg, rgba(255, 87, 87, 0.15), rgba(255, 255, 255, 0.03));
+}
+
+.callStatusPill.declined {
+  color: #ffe3bc;
+  background: rgba(255, 177, 90, 0.14);
+}
+
+.callStatusPill.ringing {
+  color: #cfe9ff;
+  background: rgba(92, 195, 255, 0.14);
+}
+
+.outgoingSummaryCard {
+  background: linear-gradient(135deg, rgba(61, 220, 132, 0.12), rgba(92, 195, 255, 0.04));
+}
+
+.callSummaryCard strong {
+  font-size: 0.95rem;
+}
+
+.callSummaryCard span,
+.callSummaryCard p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.commandCard strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.waMark {
+  width: 84px;
+  height: 84px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+.waMarkImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.waMarkRed {
+  background: radial-gradient(circle at 20% 18%, #ffbfbf, #cc1111 68%);
+}
+.waMarkGreen {
+  background: radial-gradient(circle at 20% 18%, #bfffbf, #25d366 68%);
+}
+.waMarkBubble,
+.waMarkIcon,
+.waIcon {
+  display: none;
+}
+
+.mobileHeader {
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 14px;
+  background:
+    linear-gradient(180deg, rgba(31, 44, 52, 0.98), rgba(24, 37, 45, 0.96)),
+    rgba(9, 20, 26, 0.92);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  min-height: 74px;
+  backdrop-filter: blur(14px);
+}
+.mobileHeaderText { display: grid; gap: 2px; flex: 1; }
+.mobileHeaderText span, .cardText span, .messageMeta, .field span, .miniText { color: var(--muted); font-size: 12px; }
+.presenceLine {
+  color: var(--muted-strong);
+  font-size: 12px;
+}
+.mobileHeaderText strong { font-size: 17px; font-weight: 700; }
+.appBody {
+  padding: 12px;
+  overflow: visible;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  height: auto;
+  overscroll-behavior: contain;
+}
+
+.tabRow, .bottomNav, .detailGrid, .memberGrid { display: flex; gap: 10px; }
+.bottomNav {
+  position: sticky; bottom: 0; padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px)); background: rgba(17, 27, 33, 0.96);
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+  z-index: 6;
+}
+
+.ghostBtn, .primaryBtn, .bottomItem, .chatCard, .memberChip {
+  border-radius: 16px; border: 1px solid var(--line); color: var(--text); cursor: pointer; transition: 0.2s ease;
+}
+.ghostBtn, .bottomItem, .memberChip { background: rgba(255, 255, 255, 0.035); }
+.ghostBtn, .primaryBtn { padding: 13px 15px; min-height: 46px; }
+.ghostBtn:hover, .primaryBtn:hover, .chatCard:hover, .memberChip:hover { filter: brightness(1.04); }
+.primaryBtn {
+  background: linear-gradient(135deg, var(--brand), #6be59a);
+  color: #073525; border: 0; font-weight: 700;
+  box-shadow: 0 14px 28px rgba(61, 220, 132, 0.18);
+}
+.ghostBtn {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.activeTab, .activeBottom, .activeChip {
+  background: linear-gradient(180deg, rgba(37, 211, 102, 0.18), rgba(37, 211, 102, 0.08));
+  border-color: rgba(37, 211, 102, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.backBtn { padding: 8px 12px; }
+.smallGhost { padding: 8px 12px; }
+.bottomItem { flex: 1; padding: 11px 6px; min-height: 48px; font-size: 12px; font-weight: 700; }
+
+.avatar {
+  border-radius: 18px; object-fit: cover; border: 1px solid rgba(255, 255, 255, 0.12); flex-shrink: 0;
+}
+.groupAvatar { border-radius: 14px; }
+.avatarFallback {
+  display: grid; place-items: center; font-weight: 800;
+  background: linear-gradient(135deg, #365dff, #25d366);
+}
+
+.chatList, .contactList, .callList, .statusGrid, .stackLayout { display: grid; gap: 12px; }
+.stackLayout { align-content: start; }
+.screenPane, .sheetCard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 14px;
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0)),
+    radial-gradient(circle at top right, rgba(255,255,255,0.03), transparent 30%);
+}
+.screenPane {
+  min-height: 0;
+}
+.contactImportCard {
+  margin-bottom: 14px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, rgba(61, 220, 132, 0.08), rgba(84, 167, 255, 0.05));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.requestStack {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.requestCard {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(92, 195, 255, 0.18);
+  background: linear-gradient(135deg, rgba(92, 195, 255, 0.1), rgba(61, 220, 132, 0.06));
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.14);
+}
+.mobileSplit {
+  display: grid;
+  gap: 0;
+  align-items: stretch;
+  min-height: 0;
+  height: 100%;
+}
+.chatSidebarPane,
+.chatConversationPane {
+  border-radius: 0;
+  border: 0;
+}
+.chatSidebarPane {
+  background:
+    linear-gradient(180deg, rgba(17, 27, 33, 0.98), rgba(17, 27, 33, 0.98)),
+    rgba(17, 27, 33, 0.98);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.chatConversationPane {
+  background:
+    linear-gradient(180deg, rgba(11, 20, 26, 0.98), rgba(11, 20, 26, 0.98)),
+    rgba(11, 20, 26, 0.98);
+}
+.chatScreen {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.hiddenMobile { display: none; }
+.sectionTop { margin-bottom: 10px; }
+.searchInput { margin-top: 10px; }
+.miniHero {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+.miniHero div {
+  padding: 12px 10px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+.miniHero strong { font-size: 18px; }
+.miniHero span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.chatCard, .contactRow, .callRow {
+  width: 100%; padding: 13px; text-align: left; background: rgba(255, 255, 255, 0.03);
+  display: flex; justify-content: space-between; gap: 12px;
+}
+.chatCard, .contactRow, .callRow, .sheetCard, .screenPane { box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); }
+.activeCard { background: rgba(37, 211, 102, 0.12); border-color: rgba(37, 211, 102, 0.26); }
+.activeCard {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 14px 28px rgba(8, 35, 27, 0.22);
+}
+.chatCard,
+.contactRow,
+.callRow,
+.sheetCard,
+.screenPane {
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.chatCard:hover,
+.contactRow:hover,
+.callRow:hover,
+.sheetCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(61, 220, 132, 0.2);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.14);
+}
+.chatCard {
+  position: relative;
+  overflow: hidden;
+}
+
+.chatList {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  align-content: start;
+  padding-right: 4px;
+}
+
+.chatListEmpty {
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+}
+
+.chatCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04), transparent 32%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.chatCard:hover::after {
+  opacity: 1;
+}
+.cardText { display: grid; gap: 4px; }
+.cardText strong,
+.cardText span,
+.detailInfoCard span,
+.callSummaryCard p,
+.callSummaryCard span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.cardMeta { flex-direction: column; align-items: flex-end; gap: 6px; max-width: 42%; }
+.detailMeta {
+  max-width: 48%;
+}
+.cardMeta p { margin: 0; color: var(--muted); font-size: 12px; }
+.tapHint {
+  color: #9de8b8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.chatCardFlags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chatStatePill {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted-strong);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lockedStatePill {
+  background: rgba(255, 214, 102, 0.14);
+  color: #ffe7a8;
+}
+.tappableRow {
+  cursor: pointer;
+}
+.tappableRow:hover {
+  border-color: rgba(61, 220, 132, 0.24);
+  background: rgba(61, 220, 132, 0.08);
+}
+.rowActionLabel {
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(61, 220, 132, 0.18);
+  background: rgba(61, 220, 132, 0.08);
+  color: #dff9e8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.detailRow {
+  align-items: flex-start;
+}
+
+.statusSheet {
+  align-content: start;
+  gap: 16px;
+}
+
+.updatesScreen {
+  padding: 0;
+  overflow: hidden;
+}
+
+.statusDesktopLayout {
+  min-height: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(320px, 392px) minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.statusSidebar {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  background: rgba(18, 18, 18, 0.96);
+  border-right: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.statusSidebarHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 18px 14px;
+}
+
+.statusSidebarHeader h2 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.statusSidebarHeader p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ghostIconButton {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.ghostIconButton:hover {
+  background: rgba(61, 220, 132, 0.1);
+  border-color: rgba(61, 220, 132, 0.3);
+}
+
+.statusSearchBar {
+  margin: 0 18px 14px;
+  min-height: 46px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.statusSearchIcon {
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0;
+  position: relative;
+  opacity: 0.78;
+}
+
+.statusSearchIcon::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  right: -5px;
+  bottom: -1px;
+  transform: rotate(45deg);
+}
+
+.statusSidebarScroll {
+  overflow-y: auto;
+  padding: 0 8px 18px 18px;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.statusComposerRailCard {
+  padding: 0 10px 14px 0;
+}
+
+.statusPanelRow {
+  border-radius: 18px;
+}
+
+.statusStage {
+  min-width: 0;
+  background: rgba(18, 18, 18, 0.84);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  padding: 32px;
+}
+
+.statusStageCenter {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: 12px;
+  color: var(--muted-strong);
+}
+
+.statusStageGlyph {
+  width: 76px;
+  height: 76px;
+  border-radius: 999px;
+  border: 6px solid rgba(130, 148, 158, 0.28);
+  box-shadow:
+    inset 0 0 0 6px rgba(130, 148, 158, 0.12),
+    0 0 0 12px rgba(130, 148, 158, 0.05);
+  color: transparent;
+}
+
+.statusStageCenter h3 {
+  margin: 0;
+  font-size: clamp(2rem, 2.8vw, 3.1rem);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.statusStageCenter p {
+  margin: 0;
+  max-width: 480px;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.statusStageFooter {
+  justify-self: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.statusComposerCard {
+  display: grid;
+  gap: 12px;
+}
+
+.statusAttachmentControls {
+  display: grid;
+  gap: 10px;
+}
+
+.statusAttachButton {
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px dashed rgba(61, 220, 132, 0.34);
+  border-radius: 16px;
+  background: rgba(61, 220, 132, 0.08);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.statusAttachButton input {
+  display: none;
+}
+
+.statusDraftPreview {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.statusDraftMedia,
+.statusPreviewThumb {
+  width: 100%;
+  max-width: 240px;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 16px;
+  display: block;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.statusPreviewThumb {
+  max-width: 88px;
+  max-height: 66px;
+}
+
+.statusMediaPreview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.statusAttachmentLabel,
+.statusLinkDraft,
+.statusPreviewText {
+  color: var(--muted-strong);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.statusPreviewText {
+  display: block;
+  margin-top: 4px;
+}
+
+.statusLinkPreview {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--brand);
+  font-size: 12px;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.statusLinkPreview:hover {
+  text-decoration: underline;
+}
+
+.statusGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.statusGroupLabel {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.statusRow {
+  width: 100%;
+  text-align: left;
+}
+
+.statusOwnerRow {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.statusAvatarRing {
+  padding: 3px;
+  border-radius: 999px;
+  display: grid;
+}
+
+.myStatusRing {
+  background: linear-gradient(135deg, rgba(61, 220, 132, 0.92), rgba(92, 195, 255, 0.42));
+}
+
+.freshStatusRing {
+  background: linear-gradient(135deg, rgba(61, 220, 132, 0.92), rgba(61, 220, 132, 0.28));
+}
+
+.viewedStatusRing {
+  background: linear-gradient(135deg, rgba(130, 148, 158, 0.66), rgba(130, 148, 158, 0.24));
+}
+
+[data-theme="light"] .statusSidebar {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+[data-theme="light"] .statusStage {
+  background: rgba(246, 248, 250, 0.95);
+}
+
+[data-theme="light"] .statusSearchBar,
+[data-theme="light"] .ghostIconButton,
+[data-theme="light"] .statusDraftPreview {
+  background: rgba(16, 24, 40, 0.05);
+}
+
+@media (max-width: 900px) {
+  .updatesScreen {
+    padding: 18px 14px 92px;
+    overflow-y: auto;
+  }
+
+  .statusDesktopLayout {
+    height: auto;
+    min-height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .statusSidebar {
+    border-right: 0;
+    border-radius: 24px;
+    overflow: visible;
+  }
+
+  .statusSidebarScroll {
+    overflow: visible;
+    padding-right: 18px;
+  }
+
+  .statusStage {
+    min-height: 360px;
+    border-radius: 24px;
+    margin-top: 14px;
+    padding: 24px 18px;
+  }
+}
+.chatMetaLine { display: flex; align-items: center; gap: 8px; }
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.onlineDot {
+  background: #4be38e;
+  box-shadow: 0 0 0 4px rgba(75, 227, 142, 0.12);
+}
+.offlineDot {
+  background: #748791;
+}
+.unreadBadge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #053524;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-grid;
+  place-items: center;
+}
+
+.waBg {
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.04), transparent 20%),
+    linear-gradient(180deg, rgba(32, 44, 51, 0.94), rgba(17, 27, 33, 0.98));
+}
+.chatTop {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 2; background: linear-gradient(180deg, rgba(17, 27, 33, 0.98), rgba(17, 27, 33, 0.92));
+  backdrop-filter: blur(14px);
+  border-radius: 0;
+  padding: 8px 6px 14px;
+}
+.chatMenuWrap {
+  position: relative;
+}
+.menuToggleBtn {
+  min-width: 46px;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 2px;
+}
+.chatMenuPanel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 190px;
+  padding: 8px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(19, 33, 40, 0.98), rgba(10, 22, 29, 0.98)),
+    linear-gradient(135deg, rgba(37, 211, 102, 0.12), rgba(88, 181, 255, 0.08));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  z-index: 8;
+}
+
+.avatarTrigger {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.chatMenuItem {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.chatMenuItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+.modalScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 12, 16, 0.72);
+  backdrop-filter: blur(12px);
+}
+.connectModalCard {
+  width: min(640px, 100%);
+  max-height: min(86vh, 860px);
+  overflow: auto;
+  padding: 24px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at top right, rgba(37, 211, 102, 0.16), transparent 30%),
+    radial-gradient(circle at left, rgba(88, 181, 255, 0.14), transparent 24%),
+    linear-gradient(180deg, rgba(17, 27, 33, 0.98), rgba(10, 19, 26, 0.98));
+  box-shadow: 0 34px 80px rgba(0, 0, 0, 0.36);
+  animation: fadeUp 0.22s ease;
+}
+.profileDetailCard {
+  width: min(620px, 100%);
+}
+.profileDetailHero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 0 18px;
+}
+.detailInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.detailInfoCard {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025));
+  display: grid;
+  gap: 6px;
+}
+.detailInfoCard strong {
+  font-size: 13px;
+}
+.detailInfoCard span {
+  color: var(--muted-strong);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.detailInfoWide {
+  grid-column: 1 / -1;
+}
+.requestPopupCard {
+  width: min(560px, 100%);
+}
+.requestPopupHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.requestPopupHeader h2 {
+  margin: 6px 0 0;
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
+  letter-spacing: -0.03em;
+}
+.closeIconBtn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 18px;
+  line-height: 1;
+}
+.requestPopupItem {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.requestEmptyCard {
+  min-height: 110px;
+  display: grid;
+  place-items: center;
+}
+.chatMatchCard {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.chatMatchCard:hover {
+  filter: brightness(1.04);
+}
+.privacyBar {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 214, 102, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 214, 102, 0.08);
+  color: #ffe8ad;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.chatStateBanner {
+  margin-bottom: 6px;
+}
+
+.lockedBanner {
+  border-color: rgba(255, 214, 102, 0.22);
+  background: rgba(255, 214, 102, 0.12);
+}
+.callPanel {
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(61, 220, 132, 0.24);
+  background: linear-gradient(135deg, rgba(61, 220, 132, 0.12), rgba(92, 195, 255, 0.08));
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14);
+}
+.incomingCallPanel {
+  border-color: rgba(92, 195, 255, 0.28);
+  background: linear-gradient(135deg, rgba(92, 195, 255, 0.14), rgba(61, 220, 132, 0.1));
+}
+.callPreview {
+  width: 100%;
+  max-height: 240px;
+  border-radius: 16px;
+  background: #020506;
+  object-fit: cover;
+}
+.callPanelHeader,
+.incomingCallHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.callHeroBadge {
+  min-width: 68px;
+  padding: 9px 10px;
+  border-radius: 16px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #ddfff0;
+  background: linear-gradient(135deg, rgba(61, 220, 132, 0.24), rgba(92, 195, 255, 0.18));
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.16);
+}
+.callPanelActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.endCallBtn,
+.acceptCallBtn,
+.declineCallBtn {
+  min-width: 116px;
+}
+.acceptCallBtn {
+  box-shadow: 0 14px 30px rgba(61, 220, 132, 0.2);
+}
+.declineCallBtn,
+.endCallBtn {
+  border-color: rgba(255, 116, 116, 0.24);
+  background: linear-gradient(135deg, rgba(93, 24, 24, 0.92), rgba(139, 41, 41, 0.78));
+  color: #ffe8e8;
+}
+.messagesPane {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px clamp(8px, 2vw, 20px);
+  margin: 12px 0;
+  border-radius: 18px;
+  min-height: 0;
+  background:
+    radial-gradient(circle at 20px 20px, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px),
+    radial-gradient(circle at 70px 70px, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(8, 17, 22, 0.86), rgba(8, 17, 22, 0.74));
+  background-size: 90px 90px, 120px 120px, auto;
+  border: 1px solid rgba(255,255,255,0.04);
+  overscroll-behavior: contain;
+}
+
+.messagesPaneWrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.chatWallpaperPane {
+  padding-top: 10px;
+}
+
+.timelineDateDivider {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 2px;
+  position: sticky;
+  top: 8px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.timelineDateDivider span {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(10, 19, 24, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #bed2d9;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(12px);
+}
+
+.messageGroup {
+  display: grid;
+  gap: 3px;
+  width: min(100%, 680px);
+}
+
+.mineGroup {
+  justify-items: end;
+}
+
+.theirsGroup {
+  justify-items: start;
+}
+
+.timelineRow {
+  display: flex;
+  width: 100%;
+}
+
+.mineTimelineRow {
+  justify-content: flex-end;
+}
+
+.theirsTimelineRow {
+  justify-content: flex-start;
+}
+
+.messageBubble {
+  position: relative;
+  max-width: 100%; padding: 10px 12px; border-radius: 16px; border: 1px solid var(--line);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.14);
+}
+
+.stackBubble.mine {
+  border-bottom-right-radius: 6px;
+}
+
+.stackBubble.theirs {
+  border-bottom-left-radius: 6px;
+}
+
+.tailBubble.mine {
+  border-bottom-right-radius: 18px;
+}
+
+.tailBubble.theirs {
+  border-bottom-left-radius: 18px;
+}
+
+.callEventBubble {
+  width: min(100%, 680px);
+  max-width: min(92%, 680px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+}
+.messageBubble p, .statusCard small { margin: 0; line-height: 1.4; }
+.messageCaption { margin-top: 8px !important; }
+.messageMedia {
+  width: min(260px, 100%);
+  max-width: 100%;
+  border-radius: 14px;
+  display: block;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+}
+.audioPlayer {
+  width: min(260px, 100%);
+  max-width: 100%;
+}
+.fileCard {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  text-decoration: none;
+  border: 1px solid var(--line);
+}
+.mine {
+  align-self: flex-end;
+  background: linear-gradient(180deg, rgba(12, 121, 95, 0.96), rgba(8, 96, 75, 0.96));
+  border-color: rgba(102, 227, 183, 0.18);
+}
+.theirs {
+  align-self: flex-start;
+  background: linear-gradient(180deg, rgba(31, 47, 58, 0.96), rgba(25, 41, 50, 0.96));
+  border-color: rgba(255,255,255,0.08);
+}
+.senderName { margin-bottom: 4px; color: #7fe7c1; font-size: 12px; font-weight: 700; }
+.messageMeta { margin-top: 6px; display: flex; justify-content: space-between; gap: 10px; }
+.messageStamp { white-space: nowrap; }
+.readStamp { color: #7ad7ff; }
+.messageActionPanel {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.messageActionBtn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.messageActionBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.deleteMessageBtn {
+  color: #ffd0d0;
+  border-color: rgba(255, 109, 109, 0.24);
+  background: rgba(255, 109, 109, 0.12);
+}
+.typingPill {
+  align-self: flex-start;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  max-width: fit-content;
+}
+
+.scrollToBottomBtn {
+  position: absolute;
+  right: 18px;
+  bottom: 22px;
+  min-height: 40px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(61, 220, 132, 0.28);
+  background: linear-gradient(135deg, rgba(10, 28, 24, 0.96), rgba(20, 56, 46, 0.92));
+  color: #eafff5;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+.mediaPreviewBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(61, 220, 132, 0.08), rgba(92, 195, 255, 0.06));
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.emojiWrap {
+  margin-bottom: 8px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  animation: fadeUp 0.2s ease;
+}
+.composerIcon {
+  white-space: nowrap;
+  border-radius: 22px;
+  min-height: 54px;
+  padding-inline: 14px;
+  font-weight: 700;
+}
+.hiddenInput {
+  display: none;
+}
+.composerAction {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 142px;
+  padding: 10px 14px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)),
+    rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.1);
+}
+.composerActionActive {
+  box-shadow: 0 14px 28px rgba(61, 220, 132, 0.16);
+}
+.composerGlyph {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(61, 220, 132, 0.2), rgba(92, 195, 255, 0.15));
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.composerActionText {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+.composerActionText strong {
+  font-size: 13px;
+}
+.composerActionText small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.composerBar {
+  display: grid;
+  gap: 10px;
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(17, 27, 33, 0.74), rgba(17, 27, 33, 0.98));
+  padding: 10px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-radius: 20px 20px 0 0;
+}
+.composerTools,
+.composerInputRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.composerTools {
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.composerTools::-webkit-scrollbar {
+  display: none;
+}
+.composerInputRow .input {
+  flex: 1;
+  min-height: 52px;
+}
+.composerSend {
+  min-width: 108px;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.composerSend::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(125deg, rgba(255,255,255,0.26), transparent 32%);
+  opacity: 0.65;
+}
+.callActionRow {
+  gap: 8px;
+}
+.callActionBtn {
+  min-width: 122px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)),
+    rgba(255,255,255,0.03);
+}
+.callActionBtn:hover {
+  transform: translateY(-1px);
+}
+.callActionIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  line-height: 1;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.08);
+}
+.voiceActionBtn .callActionIcon {
+  background: linear-gradient(135deg, rgba(61, 220, 132, 0.24), rgba(16, 91, 69, 0.2));
+}
+.videoActionBtn .callActionIcon {
+  background: linear-gradient(135deg, rgba(92, 195, 255, 0.24), rgba(36, 87, 132, 0.2));
+}
+.callActionText {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+.callActionText strong {
+  font-size: 13px;
+}
+.callActionText small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.input {
+  width: 100%; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.04);
+  color: var(--text); padding: 13px 14px; outline: none;
+}
+.input:focus {
+  border-color: rgba(37, 211, 102, 0.44);
+  box-shadow: 0 0 0 4px rgba(37, 211, 102, 0.12), 0 10px 24px rgba(37, 211, 102, 0.08);
+  background: rgba(255,255,255,0.055);
+}
+.input:hover {
+  border-color: rgba(255,255,255,0.18);
+}
+.formGrid { display: grid; gap: 12px; }
+.twoCol { grid-template-columns: 1fr 1fr; }
+.field { display: grid; gap: 8px; }
+.field span { font-weight: 600; }
+.textArea { min-height: 110px; resize: vertical; }
+.previewBox {
+  min-height: 90px; display: grid; place-items: center; border-radius: 16px;
+  border: 1px dashed var(--line); background: rgba(255, 255, 255, 0.02); color: var(--muted);
+}
+.spanTwo { grid-column: 1 / -1; }
+
+.statusHero, .profilePreview { align-items: flex-start; }
+.statusCard {
+  padding: 14px; border-radius: 18px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line);
+}
+.profileHeroCard {
+  background:
+    radial-gradient(circle at top right, rgba(61, 220, 132, 0.14), transparent 28%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025));
+}
+.profileRequestCard {
+  background:
+    radial-gradient(circle at top left, rgba(92, 195, 255, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02));
+}
+.memberGrid { flex-wrap: wrap; }
+.memberChip { padding: 8px 10px; display: flex; align-items: center; gap: 8px; }
+
+.banner, .floatingBanner {
+  padding: 12px 14px; border-radius: 16px; border: 1px solid var(--line);
+}
+.infoBanner, .infoFloat { background: rgba(52, 183, 241, 0.12); color: #d7f6ff; }
+.errorBanner, .errorFloat { background: rgba(255, 82, 82, 0.15); color: #ffd9d9; }
+.floatingBannerStack {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px));
+  display: grid;
+  gap: 10px;
+  z-index: 30;
+}
+.floatingBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+}
+
+.floatingBannerText {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.floatingBannerClose {
+  min-width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  cursor: pointer;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.floatingBannerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.floatingBannerActionBtn {
+  min-width: 56px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.authFloatingBannerStack {
+  top: calc(12px + env(safe-area-inset-top, 0px));
+}
+
+.emptyPanel {
+  min-height: 260px; display: grid; place-items: center; text-align: center; padding: 18px;
+}
+.emptyPanel > div {
+  max-width: 480px;
+  padding: 28px 24px;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(circle at top, rgba(92,195,255,0.08), transparent 22%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025));
+  box-shadow: 0 22px 56px rgba(0,0,0,0.16);
+}
+.centerActions {
+  justify-content: center;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.compactEmpty {
+  min-height: 120px;
+  border: 1px dashed var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.accountShell {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  min-height: 0;
+  height: 100%;
+}
+
+.accountSidebar {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 0;
+  padding: 18px 18px 14px;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background:
+    linear-gradient(180deg, rgba(17, 27, 33, 0.98), rgba(17, 27, 33, 0.98)),
+    rgba(17, 27, 33, 0.98);
+  overflow: hidden;
+}
+
+.accountSidebarHeader strong,
+.accountContentHeader strong {
+  font-size: 22px;
+}
+
+.helloTooSettingsSidebar {
+  grid-template-rows: auto auto auto 1fr auto;
+}
+
+.settingsSearchWrap {
+  display: block;
+}
+
+.settingsSearchInput {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  min-height: 44px;
+}
+
+.settingsProfileBlock {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 10px 0 12px;
+}
+
+.settingsStatusBubble {
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #d8e2e7;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.settingsNav {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.settingsNavItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 12px 12px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.settingsNavItem:hover,
+.activeSettingsNavItem {
+  background: rgba(0, 168, 132, 0.12);
+  border-color: rgba(0, 168, 132, 0.24);
+  transform: translateY(-1px);
+}
+
+.settingsBadge {
+  min-width: 28px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 168, 132, 0.16);
+  color: #dcfff6;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  margin-left: auto;
+}
+
+.settingsItemIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #dbe3e7;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 10px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.settingsLogoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 12px 6px;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: #ff7676;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+}
+
+.settingsDangerIcon {
+  background: rgba(255, 82, 82, 0.16);
+  color: #ffb8b8;
+}
+
+.accountContent {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  background:
+    linear-gradient(180deg, rgba(11, 20, 26, 0.98), rgba(11, 20, 26, 0.98)),
+    rgba(11, 20, 26, 0.98);
+}
+
+.accountContentHeader {
+  padding: 22px 24px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.accountPanel {
+  min-height: 0;
+  overflow: auto;
+  padding: 22px 24px 28px;
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.helloTooSettingsContent {
+  padding: 0;
+}
+
+.helloTooSettingsPanel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: 0;
+}
+
+.settingsShortcutStage {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(86px, 114px));
+  justify-content: center;
+  gap: 18px;
+  padding: 120px 28px 48px;
+}
+
+.settingsShortcutCard {
+  width: 114px;
+  border: 0;
+  background: transparent;
+  color: #b6c4cb;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.settingsShortcutIcon {
+  width: 86px;
+  height: 86px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: #2c2c2c;
+  color: #dce4e8;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.settingsDetailSurface {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+}
+
+.helloTooDetailHeader {
+  background: rgba(17, 27, 33, 0.92);
+}
+
+.accountQuickGrid,
+.accountInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.accountQuickCard,
+.accountInfoCard,
+.accountNotice {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025)),
+    rgba(255,255,255,0.02);
+  display: grid;
+  gap: 8px;
+}
+
+.accountQuickCard span,
+.accountInfoCard span,
+.accountNotice span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.accountActionRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.accountNotice {
+  max-width: 420px;
+}
+
+.accountRequestList,
+.accountCallList {
+  align-content: start;
+}
+
+.securityGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.securityCard {
+  align-content: start;
+}
+
+.appLockOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 10, 14, 0.78);
+  backdrop-filter: blur(18px);
+}
+
+.appLockCard {
+  width: min(460px, 100%);
+  padding: 28px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at top right, rgba(61, 220, 132, 0.16), transparent 28%),
+    linear-gradient(180deg, rgba(17, 27, 33, 0.98), rgba(10, 19, 26, 0.98));
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.42);
+}
+
+.appLockHeader {
+  text-align: center;
+  justify-items: center;
+}
+
+.appLockField {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+}
+
+.appLockField span {
+  color: var(--muted-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.appLockBioBtn {
+  width: 100%;
+}
+
+.updatePromptCard {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  width: min(560px, calc(100vw - 24px));
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(92, 195, 255, 0.24);
+  background:
+    radial-gradient(circle at top right, rgba(61, 220, 132, 0.15), transparent 28%),
+    linear-gradient(180deg, rgba(17, 27, 33, 0.98), rgba(10, 19, 26, 0.98));
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.32);
+  display: grid;
+  gap: 12px;
+}
+
+.appUpdatePrompt {
+  top: 18px;
+}
+
+[data-theme="light"] .updatePromptCard {
+  background:
+    radial-gradient(circle at top right, rgba(61, 220, 132, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 247, 249, 0.98));
+}
+
+@media (min-width: 900px) {
+  .phoneFrame {
+    width: 100vw;
+    min-height: 100svh;
+    min-height: 100dvh;
+    height: auto;
+  }
+  .appBody { min-height: 0; }
+  .mobileSplit { grid-template-columns: 380px minmax(0, 1fr); }
+  .hiddenMobile { display: block; }
+  .chatScreen.hiddenMobile { display: flex; }
+  .bottomNav { justify-content: center; }
+  .bottomItem { max-width: 140px; }
+  .stackLayout { grid-template-columns: 1fr 1fr; }
+  .sheetCard:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+
+@media (max-width: 960px) {
+  .waShell {
+    grid-template-columns: 1fr;
+  }
+
+  .waRail,
+  .waWindowBar {
+    display: none;
+  }
+
+  .waWorkspace {
+    grid-template-rows: 1fr auto;
+  }
+
+  .workspaceShell {
+    grid-template-columns: 1fr;
+  }
+
+  .workspaceSidebar {
+    display: none;
+  }
+
+  .accountShell {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .accountSidebar {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .accountQuickGrid,
+  .accountInfoGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .accountShell {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .accountSidebar {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .settingsShortcutStage {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 28px 16px 24px;
+  }
+
+  .settingsShortcutCard {
+    width: 100%;
+  }
+
+  .settingsShortcutIcon {
+    width: 72px;
+    height: 72px;
+  }
+
+  .securityGrid,
+  .accountInfoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .appLockCard {
+    padding: 22px 18px;
+    border-radius: 22px;
+  }
+
+  .updatePromptCard {
+    top: 12px;
+    width: min(100vw - 18px, 100%);
+    padding: 14px 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell, .authShell { padding: 0; }
+  .phoneFrame, .authPanel {
+    width: 100%;
+    min-height: 100svh;
+    min-height: 100dvh;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    box-shadow: none;
+  }
+  .authPanel { padding: 14px 12px; }
+  .authHeroPanel, .authGlass {
+    border-radius: 18px;
+  }
+  .authHeroPanel {
+    padding: 14px;
+  }
+  .authGlass {
+    margin-top: 12px;
+    padding: 12px;
+  }
+  .loginHero h1 { font-size: 24px; }
+  .loginHero {
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+  .authShowcase {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .authBadgeRow {
+    gap: 6px;
+  }
+  .authStats {
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .authStat {
+    border-radius: 12px;
+    padding: 8px 6px;
+  }
+  .authBadge {
+    padding: 7px 10px;
+    font-size: 10px;
+  }
+  .authFormCard {
+    padding: 12px;
+    border-radius: 16px;
+  }
+  .authFormHeader strong {
+    font-size: 16px;
+  }
+  .appBody {
+    padding: 0;
+    background: var(--bg);
+  }
+  .mobileSectionNav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 10px 12px 0;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 4;
+  }
+  .mobileSectionNav .ghostBtn {
+    min-height: 40px;
+    padding: 8px 6px;
+    font-size: 11px;
+    border-radius: 12px;
+  }
+  .mobilePaneHidden {
+    display: none;
+  }
+  .mobilePaneActive {
+    display: block;
+  }
+  .mobileHeader {
+    min-height: 64px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .mobileHeaderText strong { font-size: 16px; }
+  .mobileHeaderText span {
+    font-size: 11px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: initial;
+    max-width: 220px;
+  }
+  .screenPane, .sheetCard {
+    border-radius: 0;
+    padding: 10px 12px;
+    border-left: 0;
+    border-right: 0;
+    background: var(--panel);
+  }
+  .mobileSplit {
+    gap: 0;
+    min-height: 0;
+  }
+  .chatScreen {
+    min-height: 0;
+    height: auto;
+  }
+  .chatList, .contactList, .callList, .statusGrid, .stackLayout {
+    gap: 0;
+  }
+  .stackLayout {
+    align-content: stretch;
+  }
+  .chatCard, .contactRow, .callRow, .statusCard, .showcaseCard {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    padding: 12px;
+  }
+  .chatCard, .contactRow, .callRow {
+    border-top: 0;
+    background: transparent;
+  }
+  .chatCard {
+    align-items: center;
+  }
+  .chatCard .rowStart {
+    min-width: 0;
+    flex: 1;
+  }
+  .chatCard .cardText strong,
+  .contactRow .cardText strong,
+  .callRow .cardText strong {
+    font-size: 14px;
+  }
+  .chatCard .cardText span,
+  .contactRow .cardText span,
+  .callRow .cardText span {
+    font-size: 11px;
+  }
+  .sectionTop {
+    margin-bottom: 8px;
+    padding: 2px 0 10px;
+  }
+  .searchInput {
+    margin-top: 8px;
+    border-radius: 999px;
+  }
+  .chatTop {
+    padding: 2px 0 10px;
+    margin: 0;
+    align-items: center;
+  }
+  .privacyBar {
+    margin-top: 8px;
+    border-radius: 10px;
+  }
+  .messagesPane {
+    margin: 8px 0;
+    padding: 10px 2px;
+    border-radius: 0;
+    background:
+      radial-gradient(circle at top, rgba(255, 255, 255, 0.03), transparent 24%),
+      linear-gradient(180deg, rgba(11, 20, 26, 0.96), rgba(11, 20, 26, 0.98));
+  }
+  .messageBubble {
+    max-width: 88%;
+    border-radius: 12px;
+    padding: 9px 11px;
+  }
+  .messageMedia, .audioPlayer {
+    width: 100%;
+  }
+  .composerBar {
+    gap: 8px;
+    padding-top: 6px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .composerTools {
+    gap: 6px;
+  }
+  .composerIcon {
+    min-height: 38px;
+    padding: 8px 10px;
+    font-size: 12px;
+    border-radius: 999px;
+  }
+  .composerAction {
+    min-width: auto;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .composerGlyph {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    font-size: 15px;
+  }
+  .composerActionText strong {
+    font-size: 12px;
+  }
+  .composerActionText small,
+  .callActionText small {
+    font-size: 10px;
+  }
+  .composerInputRow {
+    gap: 8px;
+    width: 100%;
+  }
+  .composerBar .input {
+    border-radius: 999px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .composerSend {
+    min-width: 74px;
+    border-radius: 999px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .miniHero { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .miniHero strong { font-size: 16px; }
+  .miniHero { padding: 0 0 10px; }
+  .miniHero div {
+    border-radius: 12px;
+    padding: 10px 6px;
+  }
+  .twoCol { grid-template-columns: 1fr; }
+  .detailInfoGrid {
+    grid-template-columns: 1fr;
+  }
+  .contactRow, .callRow { align-items: center; }
+  .contactRow {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .cardMeta,
+  .detailMeta { align-items: flex-end; max-width: 48%; }
+  .messageBubble { max-width: 92%; }
+  .bottomNav {
+    gap: 6px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .bottomItem {
+    font-size: 10px;
+    padding-left: 4px;
+    padding-right: 4px;
+    min-height: 44px;
+    border-radius: 14px;
+  }
+  .floatingBanner { left: 8px; right: 8px; }
+  .backBtn, .smallGhost, .ghostBtn, .primaryBtn {
+    min-height: 44px;
+  }
+  .callActionRow {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .callActionBtn {
+    min-width: 108px;
+    flex: 1 1 0;
+  }
+  .accountSidebar,
+  .accountContentHeader,
+  .accountPanel {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .mediaPreviewBar {
+    border-radius: 12px;
+    padding: 8px 10px;
+  }
+  .emojiWrap {
+    border-radius: 14px;
+  }
+
+  .appHeroBar {
+    grid-template-columns: 1fr;
+    margin: 10px 10px 0;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .heroSignalRow {
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .heroSignalChip {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
+  .heroStats,
+  .sectionSwitch,
+  .commandCenterGrid,
+  .callHistoryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .callHistoryScrollArea {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .callHistoryPanel,
+  .callHistoryList,
+  .callHistoryStack {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .sectionSwitch {
+    padding: 10px 10px 0;
+    gap: 8px;
+  }
+
+  .sectionSwitchBtn {
+    min-height: 50px;
+  }
+}

@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  name         String    @default("")
+  passwordHash String
+  phoneNumber  String?   @unique
+  phoneVerified Boolean  @default(false)
+  email        String?   @unique
+  emailVerified Boolean  @default(false)
+  avatarUrl    String?
+  bio          String    @default("")
+  statusText   String    @default("Hey there! I am using HelloTo.")
+  lastSeenAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  messages     Message[]
+  chatMembers  ChatMember[]
+  directChatsA DirectChat[] @relation("DirectChatUserA")
+  directChatsB DirectChat[] @relation("DirectChatUserB")
+  contactsOwned Contact[]   @relation("OwnerContacts")
+  contactLinks  Contact[]   @relation("LinkedUserContacts")
+  emailOtps     EmailOtp[]
+}
+
+model Contact {
+  id           String   @id @default(cuid())
+  ownerId      String
+  linkedUserId String?
+  name         String
+  phoneNumber  String?
+  email        String?
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  owner      User  @relation("OwnerContacts", fields: [ownerId], references: [id], onDelete: Cascade)
+  linkedUser User? @relation("LinkedUserContacts", fields: [linkedUserId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId, name])
+}
+
+model EmailOtp {
+  id         String   @id @default(cuid())
+  userId      String?
+  email      String
+  codeHash   String
+  purpose    String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, purpose, expiresAt])
+}
+
+model Chat {
+  id        String       @id @default(cuid())
+  title     String?
+  avatarUrl String?
+  isGroup   Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  direct    DirectChat?
+  members   ChatMember[]
+  messages  Message[]
+}
+
+model DirectChat {
+  chatId  String @unique
+  userAId String
+  userBId String
+
+  chat  Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  userA User @relation("DirectChatUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("DirectChatUserB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@id([userAId, userBId])
+  @@index([userBId, userAId])
+}
+
+model ChatMember {
+  chatId   String
+  userId   String
+  joinedAt DateTime @default(now())
+  lastReadAt DateTime?
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([chatId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  chatId    String
+  senderId  String
+  text      String   @default("")
+  type      String   @default("text")
+  mediaUrl  String?
+  mediaName String?
+  mediaMime String?
+  createdAt DateTime @default(now())
+
+  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([chatId, createdAt])
+}

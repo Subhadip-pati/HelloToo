@@ -1,0 +1,26 @@
+{
+  "name": "helloto",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c green,cyan \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:lan": "concurrently -n backend,frontend -c green,cyan \"npm:dev:backend\" \"npm run dev --prefix frontend -- --host 0.0.0.0\"",
+    "build": "npm run build --prefix frontend",
+    "build:frontend": "npm run build --prefix frontend",
+    "start": "npm run start --prefix backend",
+    "serve": "powershell -ExecutionPolicy Bypass -File .\\start-helloto.ps1",
+    "serve:lan": "powershell -ExecutionPolicy Bypass -File .\\start-helloto.ps1",
+    "start:windows": "powershell -ExecutionPolicy Bypass -File .\\start-helloto.ps1",
+    "enable:network": "cmd /c enable-helloto-network.cmd"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

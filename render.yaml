@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: helloto
+    runtime: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8787
+      - key: HOST
+        value: 0.0.0.0
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        value: file:/var/data/dev.db
+    disk:
+      name: helloto-data
+      mountPath: /var/data
+      sizeGB: 1
