@@ -982,48 +982,89 @@ async function verifyPhoneOtp(phoneNumber: string, purpose: PhoneOtpPurpose, cod
   return otp;
 }
 
-async function requireUser(req: express.Request, res: express.Response, next: express.NextFunction) {
+async function requireUser(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> {
   const token = getBearerToken(req);
-  if (!token) return res.status(401).json({ error: "Missing token" });
+
+  if (!token) {
+    res.status(401).json({ error: "Missing token" });
+    return;
+  }
+
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
-    if (decoded.role === "admin") return res.status(403).json({ error: "Admin token is not allowed here" });
-    const user = await prisma.user.findUnique({ where: { id: decoded.sub }, select: accountStateSelect });
-    if (!user) return res.status(401).json({ error: "Invalid token" });
+
+    if (decoded.role === "admin") {
+      res.status(403).json({ error: "Admin token is not allowed here" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.sub },
+      select: accountStateSelect,
+    });
+
+    if (!user) {
+      res.status(401).json({ error: "Invalid token" });
+      return;
+    }
+
     const accessError = getUserAccessError(user);
-    if (accessError) return res.status(403).json({ error: accessError });
+
+    if (accessError) {
+      res.status(403).json({ error: accessError });
+      return;
+    }
+
     (req as unknown as AuthedRequest).user = {
       id: user.id,
       username: user.username,
       role: "user",
       ...(user.email ? { email: user.email } : {}),
     };
+
     next();
   } catch {
     res.status(401).json({ error: "Invalid token" });
   }
 }
 
-async function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+async function requireAdmin(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> {
   const token = getBearerToken(req);
-  if (!token) return res.status(401).json({ error: "Missing token" });
+
+  if (!token) {
+    res.status(401).json({ error: "Missing token" });
+    return;
+  }
+
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
     const adminAccount = getAdminAccountOrThrow();
+
     if (
-      decoded.role !== "admin"
-      || decoded.sub !== "admin"
-      || normalizeAdminEmail(decoded.email) !== adminAccount.email
-      || decoded.adminVersion !== adminAccount.sessionVersion
+      decoded.role !== "admin" ||
+      decoded.sub !== "admin" ||
+      normalizeAdminEmail(decoded.email) !== adminAccount.email ||
+      decoded.adminVersion !== adminAccount.sessionVersion
     ) {
-      return res.status(403).json({ error: "Admin access required" });
+      res.status(403).json({ error: "Admin access required" });
+      return;
     }
+
     (req as unknown as AuthedRequest).user = {
       id: decoded.sub,
       username: decoded.username,
       role: "admin",
       email: adminAccount.email,
     };
+
     next();
   } catch {
     res.status(401).json({ error: "Invalid token" });
@@ -3249,7 +3290,7 @@ io.on("connection", (socket) => {
 });
 
 app.use(express.static(frontendDistDir));
-app.use((req, res, next) => {
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (
     req.path.startsWith("/auth")
     || req.path.startsWith("/admin")
