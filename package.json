@@ -7,9 +7,11 @@
     "dev": "concurrently -n backend,frontend -c green,cyan \"npm:dev:backend\" \"npm:dev:frontend\"",
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
+    "dev:windows": "powershell -ExecutionPolicy Bypass -File .\\start-helloto-dev.ps1",
     "dev:lan": "concurrently -n backend,frontend -c green,cyan \"npm:dev:backend\" \"npm run dev --prefix frontend -- --host 0.0.0.0\"",
-    "build": "npm run build --prefix frontend",
+    "build": "npm run build --prefix frontend && npm run build --prefix backend",
     "build:frontend": "npm run build --prefix frontend",
+    "build:backend": "npm run build --prefix backend",
     "start": "npm run start --prefix backend",
     "serve": "powershell -ExecutionPolicy Bypass -File .\\start-helloto.ps1",
     "serve:lan": "powershell -ExecutionPolicy Bypass -File .\\start-helloto.ps1",
@@ -21,6 +23,12 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0"
+  },
+  "lint-staged": {
+    "frontend/**/*.{ts,tsx,js}": ["eslint --fix", "prettier --write"],
+    "backend/**/*.{ts,js}": ["eslint --fix", "prettier --write"]
   }
 }

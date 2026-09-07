@@ -12,6 +12,7 @@
 
 **Results**:
 ✅ Monolithic App.tsx → modular panes  
+
 ✅ No prop drilling (useApp hook)
 ✅ All features preserved (login/chats/contacts/profile)
 ✅ Types exported from App.tsx

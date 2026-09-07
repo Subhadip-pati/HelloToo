@@ -1,0 +1,2028 @@
+/* ============================================
+   ADVANCED ADMIN PANEL ANIMATIONS & STYLING
+   ============================================ */
+
+/* ============ KEYFRAME ANIMATIONS ============ */
+
+@keyframes floatingGradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(73, 224, 160, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(73, 224, 160, 0.6);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rotateIn {
+  from {
+    opacity: 0;
+    transform: rotate(-10deg) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(73, 224, 160, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(73, 224, 160, 0.8);
+  }
+}
+
+@keyframes swingIn {
+  from {
+    opacity: 0;
+    transform: rotateY(-90deg);
+  }
+  to {
+    opacity: 1;
+    transform: rotateY(0);
+  }
+}
+
+@keyframes expandHeight {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 1000px;
+    opacity: 1;
+  }
+}
+
+@keyframes blinkBorder {
+  0%, 100% {
+    border-color: rgba(73, 224, 160, 0.3);
+  }
+  50% {
+    border-color: rgba(73, 224, 160, 0.8);
+  }
+}
+
+/* ============ ANIMATION UTILITY CLASSES ============ */
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 8s infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.animate-slide-right {
+  animation: slideInFromRight 0.6s ease-out;
+}
+
+.animate-slide-left {
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.animate-slide-top {
+  animation: slideInFromTop 0.6s ease-out;
+}
+
+.animate-slide-bottom {
+  animation: slideInFromBottom 0.6s ease-out;
+}
+
+.animate-scale {
+  animation: scaleIn 0.5s ease-out;
+}
+
+.animate-rotate {
+  animation: rotateIn 0.7s ease-out;
+}
+
+.animate-bounce {
+  animation: bounceIn 0.6s ease-out;
+}
+
+.animate-fade-down {
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-swing {
+  animation: swingIn 0.7s ease-out;
+}
+
+/* ============ CARD & SECTION ENHANCEMENTS ============ */
+
+.adminPanelCard {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.adminPanelCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: shimmer 8s infinite;
+}
+
+.adminPanelCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(73, 224, 160, 0.2);
+}
+
+.adminAccountCard {
+  background: linear-gradient(135deg, rgba(22, 44, 59, 0.8), rgba(42, 77, 102, 0.6));
+  border: 1px solid rgba(73, 224, 160, 0.2);
+  animation: slideInFromTop 0.7s ease-out;
+}
+
+/* ============ PROFILE AVATAR ENHANCEMENTS ============ */
+
+.adminProfileAvatar {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand), rgba(73, 224, 160, 0.3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 24px;
+  box-shadow: 0 0 30px rgba(73, 224, 160, 0.3);
+  animation: pulseGlow 2.5s ease-in-out infinite;
+  border: 3px solid rgba(73, 224, 160, 0.4);
+}
+
+.adminProfileAvatar svg {
+  filter: drop-shadow(0 0 5px rgba(73, 224, 160, 0.5));
+}
+
+.adminProfileHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(73, 224, 160, 0.05), rgba(92, 195, 255, 0.05));
+  border-radius: 16px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(73, 224, 160, 0.1);
+}
+
+.adminProfileInfo h2 {
+  font-size: 24px;
+  color: var(--text);
+  margin: 0 0 8px 0;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.adminProfileInfo .adminProfileEmail {
+  color: var(--muted);
+  margin-bottom: 12px;
+  animation: fadeInDown 0.7s ease-out;
+}
+
+.adminProfileMeta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  animation: fadeInDown 0.8s ease-out;
+}
+
+.adminProfileBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(73, 224, 160, 0.2);
+  border: 1px solid rgba(73, 224, 160, 0.4);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--brand);
+  font-weight: 600;
+  animation: scaleIn 0.6s ease-out;
+}
+
+.adminProfileStatus {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(92, 195, 255, 0.15);
+  border: 1px solid rgba(92, 195, 255, 0.3);
+  border-radius: 20px;
+  font-size: 12px;
+  color: #69cdff;
+  font-weight: 600;
+  animation: scaleIn 0.7s ease-out;
+}
+
+/* ============ MINI CARD ANIMATIONS ============ */
+
+.adminMiniCard {
+  animation: slideInFromBottom 0.6s ease-out;
+  transition: all 0.3s ease;
+}
+
+.adminMiniCard:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 15px 40px rgba(73, 224, 160, 0.15);
+}
+
+.adminAccountSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.adminAccountSummaryGrid .adminMiniCard {
+  animation-delay: calc(var(--index, 0) * 0.1s);
+}
+
+/* ============ SECTION STYLING ============ */
+
+.adminActionSection {
+  background: linear-gradient(135deg, rgba(22, 44, 59, 0.8), rgba(42, 77, 102, 0.5));
+  border: 1px solid rgba(73, 224, 160, 0.15);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  animation: slideInFromLeft 0.7s ease-out;
+  transition: all 0.3s ease;
+}
+
+.adminActionSection:hover {
+  border-color: rgba(73, 224, 160, 0.3);
+  box-shadow: 0 10px 30px rgba(73, 224, 160, 0.1);
+}
+
+.adminActionSection h3 {
+  color: var(--text);
+  font-size: 18px;
+  margin: 0 0 8px 0;
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.adminActionSection .miniText {
+  color: var(--muted);
+  animation: slideInFromLeft 0.7s ease-out;
+}
+
+/* ============ SECURITY SECTION STYLING ============ */
+
+.securitySection {
+  padding: 20px;
+  background: rgba(36, 60, 80, 0.5);
+  border: 1px solid rgba(73, 224, 160, 0.1);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  animation: expandHeight 0.6s ease-out;
+  transition: all 0.3s ease;
+}
+
+.securitySection:hover {
+  background: rgba(36, 60, 80, 0.7);
+  border-color: rgba(73, 224, 160, 0.2);
+  box-shadow: inset 0 0 20px rgba(73, 224, 160, 0.05);
+}
+
+.securitySection h4 {
+  color: var(--text);
+  font-size: 16px;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slideInFromLeft 0.5s ease-out;
+}
+
+.securityGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.securityCard {
+  animation: slideInFromBottom 0.6s ease-out;
+  transition: all 0.3s ease;
+}
+
+.securityCard:hover {
+  transform: translateY(-2px);
+}
+
+.securityActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  animation: slideInFromBottom 0.7s ease-out;
+}
+
+.appLockStatusBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.appLockStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(73, 224, 160, 0.12);
+  color: var(--brand);
+  border: 1px solid rgba(73, 224, 160, 0.2);
+}
+
+.appLockStatusBadge.inactive {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.appLockToggleBtn {
+  min-width: 90px;
+}
+
+.securitySection .composerInputRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.securitySection .composerInputRow .input {
+  flex: 1;
+}
+
+.adminAccountSection {
+  padding-bottom: 28px;
+}
+
+/* ============ INPUT ENHANCEMENTS ============ */
+
+.securityInput {
+  border: 2px solid rgba(73, 224, 160, 0.2) !important;
+  transition: all 0.3s ease;
+}
+
+.securityInput:focus {
+  border-color: rgba(73, 224, 160, 0.6) !important;
+  box-shadow: 0 0 20px rgba(73, 224, 160, 0.2) !important;
+}
+
+.otpInputGroup {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.otpInputGroup .input {
+  flex: 1;
+}
+
+.securityActionBtn {
+  white-space: nowrap;
+}
+
+/* ============ PERSONAL DETAILS SECTION ============ */
+
+.adminPersonalDetails {
+  background: linear-gradient(135deg, rgba(73, 224, 160, 0.05), rgba(92, 195, 255, 0.05));
+  border: 2px solid rgba(73, 224, 160, 0.15);
+  animation: slideInFromTop 0.7s ease-out;
+}
+
+.adminPersonalGreeting {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(73, 224, 160, 0.15);
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.adminPersonalGreeting h3 {
+  font-size: 22px;
+  color: var(--text);
+  margin: 0 0 8px 0;
+  animation: glow 2s ease-in-out infinite;
+}
+
+.adminPersonalTitle {
+  color: var(--muted);
+  margin: 0;
+  font-style: italic;
+}
+
+.adminPersonalInfo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.infoItem {
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.infoLabel {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.infoValue {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.adminContactMerged {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.adminContactDivider {
+  color: var(--muted);
+}
+
+.adminDetailsEdits {
+  animation: slideInFromBottom 0.6s ease-out;
+}
+
+.adminDetailsEdits h4 {
+  color: var(--text);
+  margin: 0 0 16px 0;
+}
+
+.adminInputGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.adminInputField {
+  animation: slideInFromBottom 0.6s ease-out;
+}
+
+.adminInputField .inputLabel {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============ APP PASSWORD SECTION ============ */
+
+.appPasswordSection {
+  background: linear-gradient(135deg, rgba(92, 195, 255, 0.08), rgba(73, 224, 160, 0.05));
+  border: 2px solid rgba(92, 195, 255, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  animation: slideInFromRight 0.7s ease-out;
+  transition: all 0.3s ease;
+}
+
+.appPasswordSection:hover {
+  border-color: rgba(92, 195, 255, 0.4);
+  box-shadow: 0 10px 30px rgba(92, 195, 255, 0.15);
+}
+
+.appPasswordHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.appPasswordIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(92, 195, 255, 0.3), rgba(73, 224, 160, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #69cdff;
+  font-size: 28px;
+  box-shadow: 0 0 20px rgba(92, 195, 255, 0.2);
+  animation: float 3s ease-in-out infinite;
+}
+
+.appPasswordInfo h3 {
+  margin: 0 0 4px 0;
+  color: var(--text);
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.appPasswordInfo p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  animation: slideInFromLeft 0.7s ease-out;
+}
+
+.appPasswordList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.appPasswordItem {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(92, 195, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  animation: slideInFromBottom 0.6s ease-out;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.appPasswordItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(92, 195, 255, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(92, 195, 255, 0.1);
+}
+
+.appPasswordItemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.appPasswordItemName {
+  flex: 1;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.appPasswordItemBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(73, 224, 160, 0.2);
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--brand);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.appPasswordItemInfo {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appPasswordItemActions {
+  display: flex;
+  gap: 8px;
+}
+
+.appPasswordItemActions button {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.appPasswordItemActions .deleteBtn {
+  background: rgba(255, 70, 80, 0.2);
+  border: 1px solid rgba(255, 70, 80, 0.3);
+  color: #ff4650;
+}
+
+.appPasswordItemActions .deleteBtn:hover {
+  background: rgba(255, 70, 80, 0.3);
+  border-color: rgba(255, 70, 80, 0.5);
+}
+
+.appPasswordForm {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(92, 195, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  animation: expandHeight 0.6s ease-out;
+}
+
+.appPasswordFormGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.appPasswordFormField {
+  animation: slideInFromBottom 0.6s ease-out;
+}
+
+.appPasswordFormField label {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.appPasswordFormField input {
+  width: 100%;
+  border: 1px solid rgba(73, 224, 160, 0.2) !important;
+  transition: all 0.3s ease;
+}
+
+.appPasswordFormField input:focus {
+  border-color: rgba(73, 224, 160, 0.6) !important;
+  box-shadow: 0 0 15px rgba(73, 224, 160, 0.2) !important;
+}
+
+.appPasswordFormActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  animation: slideInFromBottom 0.7s ease-out;
+}
+
+/* ============ AVATAR STYLING IN SECTIONS ============ */
+
+.sectionAvatarHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(73, 224, 160, 0.05);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.sectionAvatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(73, 224, 160, 0.3), rgba(92, 195, 255, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand);
+  font-weight: 700;
+  font-size: 20px;
+  box-shadow: 0 0 15px rgba(73, 224, 160, 0.2);
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+.sectionAvatarText h4 {
+  margin: 0;
+  color: var(--text);
+  font-size: 16px;
+}
+
+.sectionAvatarText p {
+  margin: 4px 0 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ============ PASSWORD STRENGTH INDICATOR ============ */
+
+.passwordStrength {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  animation: slideInFromBottom 0.5s ease-out;
+}
+
+.strengthBar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.strengthBar.weak {
+  background: rgba(255, 70, 80, 0.2);
+}
+
+.strengthBar.weak::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 33%;
+  background: #ff4650;
+  animation: slideInFromLeft 0.4s ease-out;
+}
+
+.strengthBar.medium {
+  background: rgba(255, 193, 7, 0.2);
+}
+
+.strengthBar.medium::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 66%;
+  background: #ffc107;
+  animation: slideInFromLeft 0.4s ease-out;
+}
+
+.strengthBar.strong {
+  background: rgba(73, 224, 160, 0.2);
+}
+
+.strengthBar.strong::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  background: var(--brand);
+  animation: slideInFromLeft 0.4s ease-out;
+}
+
+.strengthText {
+  font-size: 12px;
+  color: var(--muted);
+  animation: fadeInDown 0.4s ease-out;
+}
+
+/* ============ STATUS BADGES ============ */
+
+.statusBadge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  animation: scaleIn 0.5s ease-out;
+  transition: all 0.3s ease;
+}
+
+.statusBadge.active {
+  background: rgba(73, 224, 160, 0.2);
+  color: var(--brand);
+  border: 1px solid rgba(73, 224, 160, 0.4);
+}
+
+.statusBadge.inactive {
+  background: rgba(255, 70, 80, 0.2);
+  color: #ff4650;
+  border: 1px solid rgba(255, 70, 80, 0.3);
+}
+
+.statusBadge.info {
+  background: rgba(92, 195, 255, 0.2);
+  color: #69cdff;
+  border: 1px solid rgba(92, 195, 255, 0.3);
+}
+
+/* ============ ENHANCED BUTTONS ============ */
+
+.adminBtn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.adminBtn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.primaryBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(73, 224, 160, 0.3);
+}
+
+.ghostBtn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(73, 224, 160, 0.6);
+  background: rgba(73, 224, 160, 0.08);
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============ STAGGER ANIMATIONS ============ */
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* ============ CONTINUOUS BACKGROUND ANIMATION ============ */
+
+.adminConsoleContainer {
+  position: relative;
+}
+
+.adminConsoleContainer::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(73, 224, 160, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(92, 195, 255, 0.1) 0%, transparent 50%);
+  animation: float 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ============ APP PASSWORD SECTION UTILITIES ============ */
+
+.appPasswordEmptyState {
+  text-align: center;
+  padding: 24px;
+  color: var(--muted);
+}
+
+.appPasswordEmptyState p {
+  margin: 0;
+}
+
+.appPasswordEmptyState p:last-child {
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.appPasswordItemIconContainer {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(73, 224, 160, 0.3), rgba(92, 195, 255, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--brand);
+}
+
+.appPasswordItemNameWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appPasswordItemNameText {
+  flex: 1;
+}
+
+.appPasswordItemNameTextSub {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.appPasswordGeneratedBox {
+  background: rgba(73, 224, 160, 0.1);
+  border: 2px solid rgba(73, 224, 160, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.appPasswordGeneratedTitle {
+  color: var(--text);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.appPasswordGeneratedSubtitle {
+  color: var(--muted);
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.appPasswordGeneratedCode {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(73, 224, 160, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: monospace;
+  word-break: break-all;
+  color: var(--brand);
+  margin-bottom: 12px;
+  -webkit-user-select: all;
+  user-select: all;
+}
+
+.appPasswordActiveHeader {
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.sectionTopMarginTop {
+  margin-top: 22px;
+}
+
+.sectionTopMarginTop > button {
+  margin-top: 16px;
+}
+
+.btnMarginTop {
+  margin-top: 16px;
+}
+
+/* ============ SIDEBAR ENHANCEMENTS ============ */
+
+.adminSidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 16px;
+  background: linear-gradient(135deg, rgba(73, 224, 160, 0.1), rgba(92, 195, 255, 0.08));
+  border-bottom: 2px solid rgba(73, 224, 160, 0.2);
+  animation: slideInFromTop 0.7s ease-out;
+}
+
+.adminLogo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--brand), rgba(73, 224, 160, 0.3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 24px;
+  box-shadow: 0 0 30px rgba(73, 224, 160, 0.3);
+  animation: pulseGlow 2.5s ease-in-out infinite;
+  border: 2px solid rgba(73, 224, 160, 0.4);
+  transition: all 0.3s ease;
+}
+
+.adminLogo:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 0 40px rgba(73, 224, 160, 0.5);
+}
+
+.adminSidebarHeader h2 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--text);
+  animation: slideInFromLeft 0.6s ease-out;
+  letter-spacing: 0.5px;
+}
+
+.adminTopTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.adminTopLogo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--brand);
+  background: rgba(73, 224, 160, 0.12);
+  border: 1px solid rgba(73, 224, 160, 0.28);
+  box-shadow: 0 0 22px rgba(73, 224, 160, 0.14);
+  flex: 0 0 auto;
+}
+
+.adminTopTitle strong {
+  display: block;
+  color: #d8fff0;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.adminSidebarHeader h2,
+.adminPageTitle {
+  color: #f4fbff;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.24);
+}
+
+.adminUserInfo {
+  color: #eaf6fb;
+}
+
+/* ============ SYSTEM AREA ENHANCEMENTS ============ */
+
+.adminSystemHero {
+  background: linear-gradient(135deg, rgba(73, 224, 160, 0.08), rgba(92, 195, 255, 0.06));
+  border: 2px solid rgba(73, 224, 160, 0.15);
+  padding: 32px;
+  border-radius: 16px;
+  margin-bottom: 32px;
+  animation: slideInFromTop 0.7s ease-out;
+}
+
+.systemStatusGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.systemStatusCard {
+  background: linear-gradient(135deg, rgba(22, 44, 59, 0.8), rgba(42, 77, 102, 0.5));
+  border: 1px solid rgba(73, 224, 160, 0.15);
+  border-radius: 12px;
+  padding: 20px;
+  animation: slideInFromBottom 0.6s ease-out;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.systemStatusCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: shimmer 8s infinite;
+}
+
+.systemStatusCard:hover {
+  transform: translateY(-6px);
+  border-color: rgba(73, 224, 160, 0.3);
+  box-shadow: 0 15px 40px rgba(73, 224, 160, 0.15);
+}
+
+.systemStatusCardIcon {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(73, 224, 160, 0.2), rgba(92, 195, 255, 0.15));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 12px;
+  box-shadow: 0 0 15px rgba(73, 224, 160, 0.2);
+}
+
+.systemStatusCardTitle {
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.systemStatusCardValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.systemStatusCardDetail {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.systemStatusIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.systemStatusIndicator.active {
+  background: var(--brand);
+  box-shadow: 0 0 10px var(--brand);
+}
+
+.systemStatusIndicator.inactive {
+  background: #ff4650;
+  box-shadow: 0 0 10px #ff4650;
+}
+
+.systemStatusIndicator.warning {
+  background: #ffc107;
+  box-shadow: 0 0 10px #ffc107;
+}
+
+/* ============ SYSTEM SECURITY OVERVIEW ============ */
+
+.systemSecurityOverview {
+  background: linear-gradient(135deg, rgba(73, 224, 160, 0.08), rgba(92, 195, 255, 0.06));
+  border: 2px solid rgba(92, 195, 255, 0.2);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 32px;
+  animation: slideInFromRight 0.7s ease-out;
+}
+
+.systemSecurityTitle {
+  color: var(--text);
+  font-size: 18px;
+  margin: 0 0 24px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.systemSecurityGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.systemSecurityItem {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(73, 224, 160, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  animation: slideInFromBottom 0.6s ease-out;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.systemSecurityItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(73, 224, 160, 0.2);
+}
+
+.systemSecurityItemIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(73, 224, 160, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.systemSecurityItemContent h4 {
+  margin: 0 0 4px 0;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.systemSecurityItemContent p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ============ SYSTEM METRICS DASHBOARD ============ */
+
+.systemMetricsDashboard {
+  background: linear-gradient(135deg, rgba(22, 44, 59, 0.8), rgba(42, 77, 102, 0.5));
+  border: 1px solid rgba(73, 224, 160, 0.15);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 32px;
+  animation: slideInFromLeft 0.7s ease-out;
+}
+
+.systemMetricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.systemMetricCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(73, 224, 160, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  animation: slideInFromBottom 0.6s ease-out;
+  transition: all 0.3s ease;
+}
+
+.systemMetricCard:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(73, 224, 160, 0.2);
+  box-shadow: 0 10px 25px rgba(73, 224, 160, 0.1);
+}
+
+.systemMetricValue {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--brand);
+  margin-bottom: 8px;
+  animation: slideInFromTop 0.5s ease-out;
+}
+
+.systemMetricLabel {
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.systemMetricBar {
+  width: 100%;
+  height: 4px;
+  background: rgba(73, 224, 160, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.systemMetricBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), rgba(73, 224, 160, 0.6));
+  border-radius: 2px;
+  animation: slideInFromLeft 0.8s ease-out;
+}
+
+/* ============ SYSTEM ACTIONS ============ */
+
+.systemActionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.adminSystemSecuritySplit {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 32px;
+  align-items: start;
+}
+
+.adminSystemSecurityCard {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  min-width: 0;
+  overflow: visible;
+}
+
+.adminSystemSecurityCard::before {
+  display: none;
+}
+
+.adminSystemSecurityCard p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.systemLockFormGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(73, 224, 160, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.systemLockFormGrid .securityActions {
+  justify-content: flex-end;
+}
+
+.systemLockFooterActions {
+  padding-top: 2px;
+}
+
+.adminFaceScanPreview {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(92, 195, 255, 0.08);
+  border: 1px solid rgba(92, 195, 255, 0.18);
+}
+
+.adminFaceScanAvatar {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #041b15;
+  font-size: 2rem;
+  font-weight: 800;
+  background:
+    radial-gradient(circle at 50% 42%, #ffffff 0 22%, transparent 23%),
+    radial-gradient(circle at 50% 78%, #ffffff 0 26%, transparent 27%),
+    linear-gradient(135deg, #49e0a4, #69cdff);
+  box-shadow: 0 0 0 6px rgba(73, 224, 160, 0.12);
+}
+
+.adminFaceScanPreview strong {
+  display: block;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.adminFaceScanPreview p {
+  color: var(--muted);
+}
+
+.systemActionCard {
+  background: linear-gradient(135deg, rgba(22, 44, 59, 0.8), rgba(42, 77, 102, 0.5));
+  border: 1px solid rgba(73, 224, 160, 0.15);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  animation: slideInFromBottom 0.6s ease-out;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.systemActionCard:hover {
+  transform: translateY(-6px);
+  border-color: rgba(73, 224, 160, 0.3);
+  box-shadow: 0 15px 40px rgba(73, 224, 160, 0.15);
+}
+
+.systemActionIcon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.systemActionLabel {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ============ ICON STYLES ============ */
+
+.statCardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.statCardIcon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--brand);
+  filter: drop-shadow(0 0 5px rgba(73, 224, 160, 0.3));
+}
+
+/* ============ RESPONSIVE FOR SYSTEM AREA ============ */
+
+@media (max-width: 768px) {
+  .systemStatusGrid,
+  .systemMetricsGrid,
+  .systemSecurityGrid,
+  .systemActionsGrid,
+  .adminSystemSecuritySplit {
+    grid-template-columns: 1fr;
+  }
+
+  .systemLockFormGrid,
+  .adminFaceScanPreview {
+    grid-template-columns: 1fr;
+  }
+
+  .adminSystemHero {
+    padding: 20px;
+  }
+
+  .systemMetricsDashboard,
+  .systemSecurityOverview {
+    padding: 20px;
+  }
+
+  .systemStatusCard {
+    padding: 16px;
+  }
+
+  .systemMetricValue {
+    font-size: 24px;
+  }
+}
+
+/* ============ RESPONSIVE ============ */
+
+@media (max-width: 768px) {
+  .adminProfileHeader {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .adminPersonalInfo {
+    grid-template-columns: 1fr;
+  }
+
+  .securityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .appPasswordList {
+    grid-template-columns: 1fr;
+  }
+
+  .securityActions,
+  .appPasswordFormActions {
+    flex-direction: column;
+  }
+
+  .securityActions button,
+  .appPasswordFormActions button {
+    width: 100%;
+  }
+
+  .sectionAvatarHeader {
+    text-align: center;
+    justify-content: center;
+  }
+
+  .sectionAvatarText h4 {
+    font-size: 14px;
+  }
+}
+
+/* ============ CLEAN ACCOUNT SETTINGS OVERRIDES ============ */
+
+.adminSidebarHeader h2,
+.adminTopTitle strong {
+  color: #e11d48 !important;
+  text-shadow: none;
+}
+
+.adminAccountCard {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
+}
+
+.adminAccountCard::before {
+  display: none;
+}
+
+.adminAccountCard:hover {
+  transform: none;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
+}
+
+.adminAccountCard .adminProfileHeader {
+  margin: 0;
+  padding: 28px 32px 22px;
+  border-radius: 0;
+  background: #ffffff;
+  border: 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.adminAccountCard .adminProfileAvatar {
+  width: 74px;
+  height: 74px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #111827, #475569);
+  border: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+.adminAccountCard .adminProfileInfo h2,
+.adminAccountCard .adminProfileName {
+  color: #111827;
+  font-size: 1.35rem;
+  letter-spacing: 0;
+}
+
+.adminAccountCard .adminProfileEmail,
+.adminAccountCard .adminPersonalTitle,
+.adminAccountCard .miniText,
+.adminAccountCard p {
+  color: #6b7280;
+}
+
+.adminAccountCard .adminProfileBadge,
+.adminAccountCard .adminProfileStatus,
+.adminAccountCard .appLockStatusBadge {
+  border-radius: 999px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+}
+
+.adminAccountCard .adminAccountSummaryGrid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0;
+  margin: 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.adminAccountCard .adminMiniCard {
+  border: 0;
+  border-right: 1px solid #e5e7eb;
+  border-radius: 0;
+  background: #fafafa;
+  box-shadow: none;
+}
+
+.adminAccountCard .adminMiniCard:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.adminAccountCard .adminMiniCard strong,
+.adminAccountCard .adminActionSection h3,
+.adminAccountCard .adminDetailsEdits h4,
+.adminAccountCard .securitySection h4,
+.adminAccountCard .appPasswordInfo h3,
+.adminAccountCard .appPasswordActiveHeader {
+  color: #111827;
+  animation: none;
+}
+
+.adminAccountCard .adminMiniCard span,
+.adminAccountCard .sectionAvatarText p,
+.adminAccountCard .appPasswordInfo p {
+  color: #6b7280;
+}
+
+.adminAccountCard .adminAccountForms {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.adminAccountCard .adminActionSection,
+.adminAccountCard .securitySection,
+.adminAccountCard .appPasswordSection {
+  margin: 0;
+  padding: 28px 32px;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: none;
+  animation: none;
+}
+
+.adminAccountCard .adminActionSection:hover,
+.adminAccountCard .securitySection:hover,
+.adminAccountCard .appPasswordSection:hover {
+  border-color: #e5e7eb;
+  box-shadow: none;
+  transform: none;
+}
+
+.adminAccountCard .sectionAvatarHeader {
+  margin: 0 0 22px;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  animation: none;
+}
+
+.adminAccountCard .sectionAvatar,
+.adminAccountCard .appPasswordIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  color: #111827;
+  background: #f3f4f6;
+  box-shadow: none;
+  animation: none;
+}
+
+.adminAccountCard .adminPersonalGreeting,
+.adminAccountCard .adminPersonalInfo {
+  display: none;
+}
+
+.adminAccountCard .adminInputGroup,
+.adminAccountCard .securityGrid,
+.adminAccountCard .appPasswordFormGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.adminAccountCard .inputLabel,
+.adminAccountCard .infoLabel,
+.adminAccountCard .appPasswordFormField label {
+  color: #374151;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.adminAccountCard .input,
+.adminAccountCard .securityInput,
+.adminAccountCard input,
+.adminAccountCard textarea {
+  min-height: 44px;
+  border-radius: 4px;
+  border: 1px solid #cfd4dc !important;
+  background: #ffffff;
+  color: #111827;
+  box-shadow: none !important;
+}
+
+.adminAccountCard .input:focus,
+.adminAccountCard .securityInput:focus {
+  border-color: #111827 !important;
+  box-shadow: 0 0 0 1px #111827 !important;
+}
+
+.adminAccountCard .primaryBtn {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+  box-shadow: none;
+}
+
+.adminAccountCard .ghostBtn {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #e5e7eb;
+  box-shadow: none;
+}
+
+.adminAccountCard .danger,
+.adminAccountCard .deleteBtn {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+
+.adminAccountCard .securityActions {
+  margin-top: 14px;
+}
+
+.adminAccountCard .otpInputGroup,
+.adminAccountCard .composerInputRow {
+  align-items: center;
+}
+
+.adminAccountCard .appPasswordItem,
+.adminAccountCard .appPasswordForm,
+.adminAccountCard .appPasswordGeneratedBox {
+  background: #fafafa;
+  border-color: #e5e7eb;
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  .adminAccountCard .adminProfileHeader,
+  .adminAccountCard .adminActionSection,
+  .adminAccountCard .securitySection,
+  .adminAccountCard .appPasswordSection {
+    padding: 22px 18px;
+  }
+
+  .adminAccountCard .adminInputGroup,
+  .adminAccountCard .securityGrid,
+  .adminAccountCard .appPasswordFormGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============ REQUESTED DARK ACCOUNT + BLACK ADMIN TITLE ============ */
+
+.adminSidebarHeader h2,
+.adminTopTitle strong {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+.adminInfinitySecurity {
+  margin: 4px 0 0;
+  color: #49e0a4;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.adminAccountCard {
+  gap: 20px;
+  padding: 22px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(22, 44, 59, 0.92), rgba(42, 77, 102, 0.72));
+  color: var(--text);
+  border: 1px solid rgba(73, 224, 160, 0.2);
+  box-shadow: 0 18px 32px rgba(5, 12, 18, 0.18);
+}
+
+.adminAccountCard .adminProfileHeader {
+  margin-bottom: 24px;
+  padding: 24px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(73, 224, 160, 0.05), rgba(92, 195, 255, 0.05));
+  border: 1px solid rgba(73, 224, 160, 0.1);
+}
+
+.adminAccountCard .adminProfileAvatar {
+  width: 80px;
+  height: 80px;
+  color: var(--text);
+  background: linear-gradient(135deg, var(--brand), rgba(73, 224, 160, 0.3));
+  border: 3px solid rgba(73, 224, 160, 0.4);
+  box-shadow: 0 0 30px rgba(73, 224, 160, 0.3);
+}
+
+.adminAccountCard .adminProfileInfo h2,
+.adminAccountCard .adminProfileName,
+.adminAccountCard .adminMiniCard strong,
+.adminAccountCard .adminActionSection h3,
+.adminAccountCard .adminDetailsEdits h4,
+.adminAccountCard .securitySection h4,
+.adminAccountCard .appPasswordInfo h3,
+.adminAccountCard .appPasswordActiveHeader {
+  color: var(--text);
+}
+
+.adminAccountCard .adminProfileEmail,
+.adminAccountCard .adminPersonalTitle,
+.adminAccountCard .miniText,
+.adminAccountCard p,
+.adminAccountCard .adminMiniCard span,
+.adminAccountCard .sectionAvatarText p,
+.adminAccountCard .appPasswordInfo p {
+  color: var(--muted);
+}
+
+.adminAccountCard .adminProfileBadge,
+.adminAccountCard .adminProfileStatus,
+.adminAccountCard .appLockStatusBadge {
+  background: rgba(73, 224, 160, 0.14);
+  border: 1px solid rgba(73, 224, 160, 0.28);
+  color: var(--brand);
+}
+
+.adminAccountCard .adminAccountSummaryGrid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+  border-bottom: 0;
+}
+
+.adminAccountCard .adminMiniCard {
+  border: 1px solid rgba(152, 196, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.adminAccountCard .adminAccountForms {
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.adminAccountCard .adminActionSection,
+.adminAccountCard .securitySection,
+.adminAccountCard .appPasswordSection {
+  margin-bottom: 0;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(73, 224, 160, 0.15);
+  background: linear-gradient(135deg, rgba(22, 44, 59, 0.82), rgba(42, 77, 102, 0.52));
+}
+
+.adminAccountCard .sectionAvatarHeader {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(73, 224, 160, 0.05);
+}
+
+.adminAccountCard .sectionAvatar,
+.adminAccountCard .appPasswordIcon {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  color: var(--brand);
+  background: linear-gradient(135deg, rgba(73, 224, 160, 0.3), rgba(92, 195, 255, 0.2));
+}
+
+.adminAccountCard .adminPersonalGreeting,
+.adminAccountCard .adminPersonalInfo {
+  display: grid;
+}
+
+.adminAccountCard .inputLabel,
+.adminAccountCard .infoLabel,
+.adminAccountCard .appPasswordFormField label {
+  color: rgba(220, 234, 244, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.adminAccountCard .input,
+.adminAccountCard .securityInput,
+.adminAccountCard input,
+.adminAccountCard textarea {
+  border: 1px solid rgba(73, 224, 160, 0.22) !important;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.adminAccountCard .primaryBtn {
+  background: linear-gradient(135deg, var(--brand), #1ca86a);
+  color: #041b15;
+  border-color: rgba(73, 224, 160, 0.44);
+}
+
+.adminAccountCard .ghostBtn {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.adminAccountCard .danger,
+.adminAccountCard .deleteBtn {
+  color: #ffd4d4;
+  border-color: rgba(255, 107, 107, 0.28);
+  background: rgba(255, 70, 80, 0.14);
+}

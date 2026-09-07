@@ -1,41 +1,33 @@
 import React from 'react';
-import { fmtTime } from './utils';
-import { initials } from './utils';
-
-interface User {
-  id: string;
-  name: string;
-}
-
-interface Chat {
-  id: string;
-  title: string;
-  updatedAt: string;
-  lastMessage: { text: string; createdAt: string; senderId: string } | null;
-  peer: User | null;
-  isGroup: boolean;
-  avatarUrl: string | null;
-  members?: User[]; // Optional for group chats
-  unreadCount: number;
-}
+import type { Chat, User } from './types';
+import { fmtTime, initials } from './utils';
 
 interface ChatListProps {
+  /** Array of chats to display */
   chats: Chat[];
+  /** Search filter text */
   search: string;
+  /** Currently active chat ID */
   activeChatId: string;
+  /** Callback when a chat is selected */
   onChatSelect: (chatId: string) => void;
+  /** Count of registered contacts */
   registeredContactsLength: number;
 }
 
 function Avatar({ name, avatarUrl, group = false, size = 46 }: { name: string; avatarUrl?: string | null; group?: boolean; size?: number }) {
   const sizeClass = `avatarSize${Math.max(24, Math.min(96, size))}`;
-  const baseClass = group ? "avatar groupAvatar" : "avatar";
+  const baseClass = group ? 'avatar groupAvatar' : 'avatar';
   if (avatarUrl) {
     return <img className={`${baseClass} ${sizeClass}`} src={avatarUrl} alt={name} />;
   }
-  return <div className={`${baseClass} avatarFallback ${sizeClass}`}>{group ? "GR" : initials(name)}</div>;
+  return <div className={`${baseClass} avatarFallback ${sizeClass}`}>{group ? 'GR' : initials(name)}</div>;
 }
 
+/**
+ * ChatList component displays a filterable list of conversations
+ * Shows chat statistics and renders each chat with unread indicators
+ */
 export function ChatList({ chats, search, activeChatId, onChatSelect, registeredContactsLength }: ChatListProps) {
   const filteredChats = React.useMemo(() => 
     chats.filter((chat) => chat.title.toLowerCase().includes(search.toLowerCase())),
@@ -95,3 +87,4 @@ export function ChatList({ chats, search, activeChatId, onChatSelect, registered
   );
 }
 
+export type { ChatListProps };

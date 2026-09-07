@@ -1,11 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  engineType = "binary"
 }
 
 datasource db {
@@ -13,28 +8,41 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  username     String    @unique
-  name         String    @default("")
-  passwordHash String
-  phoneNumber  String?   @unique
+  id            String   @id @default(cuid())
+  username      String   @unique
+  name          String   @default("")
+  passwordHash  String
+  phoneNumber   String?  @unique
   phoneVerified Boolean  @default(false)
-  email        String?   @unique
+  email         String?  @unique
   emailVerified Boolean  @default(false)
-  avatarUrl    String?
-  bio          String    @default("")
-  statusText   String    @default("Hey there! I am using HelloTo.")
-  lastSeenAt   DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  avatarUrl     String?
+  bio           String   @default("")
+  statusText    String   @default("Hey there! I am using HelloTo.")
+  lastSeenAt    DateTime?
+  lastLoginAt   DateTime?
+  suspendedUntil DateTime?
+  isBlocked     Boolean  @default(false)
+  deletedAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  messages     Message[]
-  chatMembers  ChatMember[]
-  directChatsA DirectChat[] @relation("DirectChatUserA")
-  directChatsB DirectChat[] @relation("DirectChatUserB")
-  contactsOwned Contact[]   @relation("OwnerContacts")
-  contactLinks  Contact[]   @relation("LinkedUserContacts")
-  emailOtps     EmailOtp[]
+  messages        Message[]
+  chatMembers     ChatMember[]
+  directChatsA    DirectChat[]        @relation("DirectChatUserA")
+  directChatsB    DirectChat[]        @relation("DirectChatUserB")
+  contactsOwned   Contact[]           @relation("OwnerContacts")
+  contactLinks    Contact[]           @relation("LinkedUserContacts")
+  emailOtps       EmailOtp[]
+  statuses        StatusItem[]
+  outgoingCalls   CallLog[]           @relation("CallLogCaller")
+  incomingCalls   CallLog[]           @relation("CallLogReceiver")
+  sentRequests    ConnectionRequest[] @relation("ConnectionRequestFrom")
+  receivedRequests ConnectionRequest[] @relation("ConnectionRequestTo")
+  auditEvents     UserAuditEvent[]
+  reportsFiled    ModerationReport[]  @relation("ReportReporter")
+  reportsAgainst  ModerationReport[]  @relation("ReportTarget")
+  adminNotices    AdminNotice[]
 }
 
 model Contact {
@@ -48,15 +56,15 @@ model Contact {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  owner      User  @relation("OwnerContacts", fields: [ownerId], references: [id], onDelete: Cascade)
-  linkedUser User? @relation("LinkedUserContacts", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  owner      User  @relation("OwnerContacts", fields: [ownerId], references: [id])
+  linkedUser User? @relation("LinkedUserContacts", fields: [linkedUserId], references: [id])
 
   @@index([ownerId, name])
 }
 
 model EmailOtp {
   id         String   @id @default(cuid())
-  userId      String?
+  userId     String?
   email      String
   codeHash   String
   purpose    String
@@ -64,9 +72,22 @@ model EmailOtp {
   consumedAt DateTime?
   createdAt  DateTime @default(now())
 
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id])
 
   @@index([email, purpose, expiresAt])
+}
+
+model PhoneOtp {
+  id         String   @id @default(cuid())
+  userId     String?
+  phoneNumber String
+  codeHash   String
+  purpose    String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([phoneNumber, purpose, expiresAt])
 }
 
 model Chat {
@@ -77,34 +98,38 @@ model Chat {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
-  direct    DirectChat?
-  members   ChatMember[]
-  messages  Message[]
+  direct   DirectChat?
+  members  ChatMember[]
+  messages Message[]
+  statuses StatusItem[]
+  calls    CallLog[]
 }
 
 model DirectChat {
+  id      String @id @default(cuid())
   chatId  String @unique
   userAId String
   userBId String
 
-  chat  Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  userA User @relation("DirectChatUserA", fields: [userAId], references: [id], onDelete: Cascade)
-  userB User @relation("DirectChatUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  chat  Chat @relation(fields: [chatId], references: [id])
+  userA User @relation("DirectChatUserA", fields: [userAId], references: [id])
+  userB User @relation("DirectChatUserB", fields: [userBId], references: [id])
 
-  @@id([userAId, userBId])
+  @@unique([userAId, userBId])
   @@index([userBId, userAId])
 }
 
 model ChatMember {
-  chatId   String
-  userId   String
-  joinedAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  chatId     String
+  userId     String
+  joinedAt   DateTime @default(now())
   lastReadAt DateTime?
 
-  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chat Chat @relation(fields: [chatId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@id([chatId, userId])
+  @@unique([chatId, userId])
 }
 
 model Message {
@@ -118,8 +143,109 @@ model Message {
   mediaMime String?
   createdAt DateTime @default(now())
 
-  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  chat   Chat @relation(fields: [chatId], references: [id])
+  sender User @relation(fields: [senderId], references: [id])
 
   @@index([chatId, createdAt])
+}
+
+model StatusItem {
+  id        String   @id @default(cuid())
+  userId    String
+  chatId    String?
+  text      String   @default("")
+  mediaUrl  String?
+  mediaType String?
+  linkUrl   String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  chat Chat? @relation(fields: [chatId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+model ConnectionRequest {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  aliasName  String?
+  phoneNumber String?
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+  respondedAt DateTime?
+
+  fromUser User @relation("ConnectionRequestFrom", fields: [fromUserId], references: [id])
+  toUser   User @relation("ConnectionRequestTo", fields: [toUserId], references: [id])
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId, status, createdAt])
+}
+
+model CallLog {
+  id              String   @id @default(cuid())
+  chatId          String
+  callerId        String
+  receiverId      String
+  mode            String
+  status          String   @default("ringing")
+  createdAt       DateTime @default(now())
+  answeredAt      DateTime?
+  endedAt         DateTime?
+  durationSeconds Int?
+
+  chat     Chat @relation(fields: [chatId], references: [id])
+  caller   User @relation("CallLogCaller", fields: [callerId], references: [id])
+  receiver User @relation("CallLogReceiver", fields: [receiverId], references: [id])
+
+  @@index([callerId, createdAt])
+  @@index([receiverId, createdAt])
+}
+
+model UserAuditEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String
+  detail    String
+  actorType String   @default("system")
+  actorId   String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([kind, createdAt])
+}
+
+model ModerationReport {
+  id             String   @id @default(cuid())
+  reporterUserId String?
+  targetUserId   String
+  reason         String
+  detail         String?
+  status         String   @default("open")
+  actionNote     String?
+  createdAt      DateTime @default(now())
+  reviewedAt     DateTime?
+  reviewedBy     String?
+
+  reporterUser User? @relation("ReportReporter", fields: [reporterUserId], references: [id], onDelete: SetNull)
+  targetUser   User  @relation("ReportTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([targetUserId, status, createdAt])
+  @@index([reporterUserId, createdAt])
+}
+
+model AdminNotice {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  sentBy    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

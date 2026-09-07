@@ -37,8 +37,27 @@ type LocalStatus = {
   linkUrl?: string | null;
 };
 
+type ReportTarget = {
+  requestId: string;
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  phoneNumber?: string | null;
+  aliasName?: string | null;
+} | null;
+
+const reportReasons = [
+  'Spam messages',
+  'Fraud or scam',
+  'Abusive behaviour',
+  'Unwanted messages',
+  'Fake profile',
+] as const;
+
+const STATUS_TTL_MS = 24 * 60 * 60 * 1000;
+
 export function ContactsPane({ section }: { section: string }) {
-  const { contacts, setContacts, setChats, setActiveChatId, token, api, setInfo, setError, incomingRequests, refreshIncomingRequests, respondToIncomingRequest } = useApp();
+  const { contacts, setContacts, setChats, setActiveChatId, token, api, setInfo, setError, incomingRequests, refreshIncomingRequests, respondToIncomingRequest, saveConnectionRecordFromUser, connectionRecords, me, isMobile } = useApp();
   const [mobileContactsView, setMobileContactsView] = useState<'people' | 'status' | 'add' | 'discover'>(
     section === 'updates' ? 'status' : 'people',
   );
@@ -51,15 +70,9 @@ export function ContactsPane({ section }: { section: string }) {
   const [statusLink, setStatusLink] = useState('');
   const [statusMediaUrl, setStatusMediaUrl] = useState<string | null>(null);
   const [statusMediaType, setStatusMediaType] = useState<'image' | 'video' | null>(null);
-  const [statuses, setStatuses] = useState<LocalStatus[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const saved = window.localStorage.getItem('helloto_status_items');
-      return saved ? JSON.parse(saved) as LocalStatus[] : [];
-    } catch {
-      return [];
-    }
-  });
+  const [activeStatusId, setActiveStatusId] = useState<string | null>(null);
+  const [reportTarget, setReportTarget] = useState<ReportTarget>(null);
+  const [statuses, setStatuses] = useState<LocalStatus[]>([]);
   const [viewedStatusIds, setViewedStatusIds] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
@@ -76,15 +89,36 @@ export function ContactsPane({ section }: { section: string }) {
       contacts?: { select: (properties: string[], options?: { multiple?: boolean }) => Promise<ContactPickerContact[]> };
     }).contacts?.select === 'function';
 
-  const registeredContacts = useMemo(() => contacts.filter((contact) => contact.registeredUser), [contacts]);
-  const myStatus = useMemo(() => statuses.find((status) => status.mine) ?? null, [statuses]);
+  const blockedUserIds = useMemo(
+    () => new Set(connectionRecords.filter((record) => record.disposition === 'blocked').map((record) => record.userId)),
+    [connectionRecords],
+  );
+  const visibleContacts = useMemo(
+    () => contacts.filter((contact) => {
+      const contactUserId = contact.registeredUser?.id ?? contact.id;
+      return !blockedUserIds.has(contactUserId);
+    }),
+    [blockedUserIds, contacts],
+  );
+  const registeredContacts = useMemo(() => visibleContacts.filter((contact) => contact.registeredUser), [visibleContacts]);
+  const liveStatuses = useMemo(
+    () => statuses
+      .filter((status) => Date.now() - new Date(status.createdAt).getTime() < STATUS_TTL_MS)
+      .sort((left, right) => +new Date(right.createdAt) - +new Date(left.createdAt)),
+    [statuses],
+  );
+  const myStatus = useMemo(() => liveStatuses.find((status) => status.mine) ?? null, [liveStatuses]);
   const recentStatuses = useMemo(
-    () => statuses.filter((status) => !status.mine && !viewedStatusIds.includes(status.id)),
-    [statuses, viewedStatusIds],
+    () => liveStatuses.filter((status) => !status.mine && !viewedStatusIds.includes(status.id)),
+    [liveStatuses, viewedStatusIds],
   );
   const viewedStatuses = useMemo(
-    () => statuses.filter((status) => !status.mine && viewedStatusIds.includes(status.id)),
-    [statuses, viewedStatusIds],
+    () => liveStatuses.filter((status) => !status.mine && viewedStatusIds.includes(status.id)),
+    [liveStatuses, viewedStatusIds],
+  );
+  const activeStatus = useMemo(
+    () => liveStatuses.find((status) => status.id === activeStatusId) ?? myStatus ?? recentStatuses[0] ?? viewedStatuses[0] ?? null,
+    [activeStatusId, liveStatuses, myStatus, recentStatuses, viewedStatuses],
   );
   const showingStatusScreen = section === 'updates' || mobileContactsView === 'status';
 
@@ -100,27 +134,35 @@ export function ContactsPane({ section }: { section: string }) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem('helloto_status_items', JSON.stringify(statuses));
-  }, [statuses]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
     window.localStorage.setItem('helloto_viewed_status_ids', JSON.stringify(viewedStatusIds));
   }, [viewedStatusIds]);
 
+  const refreshStatuses = async () => {
+    if (!token) return;
+    const res = await api<{ statuses: LocalStatus[] }>('/statuses', { token });
+    setStatuses(res.statuses);
+  };
+
   useEffect(() => {
-    if (statuses.length) return;
-    const demoStatuses: LocalStatus[] = registeredContacts.slice(0, 6).map((contact, index) => ({
-      id: `demo-status-${contact.id}`,
-      userId: contact.registeredUser?.id ?? contact.id,
-      name: contact.name,
-      avatarUrl: contact.avatarUrl,
-      text: contact.registeredUser?.statusText || 'Shared a status update',
-      createdAt: new Date(Date.now() - (index + 1) * 36 * 60 * 1000).toISOString(),
-      linkUrl: index === 0 ? 'https://helloto.app' : null,
-    }));
-    if (demoStatuses.length) setStatuses(demoStatuses);
-  }, [registeredContacts, statuses.length]);
+    if (!token) {
+      setStatuses([]);
+      return;
+    }
+    refreshStatuses().catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    if (section !== 'updates' && mobileContactsView !== 'status') return;
+
+    const refresh = () => {
+      refreshStatuses().catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
+    };
+
+    refresh();
+    const interval = window.setInterval(refresh, 5000);
+    return () => window.clearInterval(interval);
+  }, [mobileContactsView, section, token]);
 
   const resetStatusComposer = () => {
     setStatusText('');
@@ -161,34 +203,78 @@ export function ContactsPane({ section }: { section: string }) {
     event.target.value = '';
   };
 
-  const postStatus = () => {
+  const postStatus = async () => {
     const cleanText = statusText.trim();
     const cleanLink = normalizeStatusLink(statusLink);
     if (!cleanText && !cleanLink && !statusMediaUrl) {
       setInfo('Add text, photo, video, or link first.');
       return;
     }
-    const nextStatus: LocalStatus = {
-      id: `my-status-${Date.now()}`,
-      userId: 'me',
-      name: 'My status',
-      avatarUrl: null,
-      text: cleanText,
-      createdAt: new Date().toISOString(),
-      mine: true,
-      mediaUrl: statusMediaUrl,
-      mediaType: statusMediaType,
-      linkUrl: cleanLink || null,
-    };
-    setStatuses((prev) => [nextStatus, ...prev.filter((status) => !status.mine)]);
+    if (!token) return;
+    const res = await api<{ status: LocalStatus }>('/statuses', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({
+        text: cleanText,
+        mediaUrl: statusMediaUrl ?? '',
+        mediaType: statusMediaType,
+        linkUrl: cleanLink || '',
+      }),
+    });
+    setStatuses((prev) => [res.status, ...prev.filter((status) => status.userId !== res.status.userId)]);
+    setActiveStatusId(res.status.id);
     resetStatusComposer();
     setInfo('Status updated');
   };
 
   const viewStatus = (statusId: string) => {
     setViewedStatusIds((prev) => (prev.includes(statusId) ? prev : [statusId, ...prev]));
-    const status = statuses.find((entry) => entry.id === statusId);
+    setActiveStatusId(statusId);
+    const status = liveStatuses.find((entry) => entry.id === statusId);
     if (status) setInfo(`Seen ${status.name}'s status`);
+  };
+
+  const deleteMyStatus = async () => {
+    if (!myStatus) return;
+    if (!token) return;
+    await api(`/statuses/${myStatus.id}`, {
+      method: 'DELETE',
+      token,
+    });
+    setStatuses((prev) => prev.filter((status) => status.id !== myStatus.id));
+    if (activeStatusId === myStatus.id) setActiveStatusId(null);
+    setInfo('Your status was deleted');
+  };
+
+  const openStatusLink = (status: LocalStatus) => {
+    if (!status.linkUrl) return;
+    window.open(status.linkUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const formatStatusTime = (iso: string) =>
+    new Date(iso).toLocaleString([], {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+  const formatStatusListTime = (iso: string) => {
+    const current = new Date();
+    const stamp = new Date(iso);
+    const isSameDay =
+      current.getFullYear() === stamp.getFullYear()
+      && current.getMonth() === stamp.getMonth()
+      && current.getDate() === stamp.getDate();
+
+    return isSameDay
+      ? `Today at ${stamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+      : stamp.toLocaleString([], {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
   };
 
   const renderStatusPreview = (status: LocalStatus) => (
@@ -263,7 +349,7 @@ export function ContactsPane({ section }: { section: string }) {
         }),
       });
       setLookupResult((prev) => prev ? { ...prev, existingRequest: { id: 'sent', status: 'pending', direction: 'outgoing' } } : prev);
-      setInfo(`Connection request sent to ${lookupResult.user.name}`);
+      setInfo(`Connect request sent to ${lookupResult.user.name}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -282,6 +368,59 @@ export function ContactsPane({ section }: { section: string }) {
     } finally {
       setBusy(false);
     }
+  };
+
+  const markContactSafety = (contact: (typeof contacts)[number], disposition: 'blocked' | 'reported') => {
+    if (disposition === 'reported') {
+      setReportTarget({
+        requestId: `contact-${contact.id}`,
+        userId: contact.registeredUser?.id ?? contact.id,
+        name: contact.name,
+        avatarUrl: contact.avatarUrl ?? null,
+        aliasName: contact.email ?? null,
+        phoneNumber: contact.phoneNumber ?? null,
+      });
+      return;
+    }
+    saveConnectionRecordFromUser({
+      requestId: `contact-${contact.id}`,
+      userId: contact.registeredUser?.id ?? contact.id,
+      name: contact.name,
+      avatarUrl: contact.avatarUrl ?? null,
+      aliasName: contact.email ?? null,
+      phoneNumber: contact.phoneNumber ?? null,
+    }, disposition, disposition === 'blocked' ? 'Blocked from contacts list' : 'Reported from contacts list');
+    setInfo(`${contact.name} ${disposition === 'blocked' ? 'blocked' : 'reported'}. Check Settings > Connections for the saved record.`);
+  };
+
+  const submitReportReason = async (reason: (typeof reportReasons)[number]) => {
+    if (!reportTarget) return;
+    try {
+      if (token && contacts.some((contact) => contact.registeredUser?.id === reportTarget.userId)) {
+        await api('/reports', {
+          method: 'POST',
+          token,
+          body: JSON.stringify({
+            targetUserId: reportTarget.userId,
+            reason,
+            detail: 'Reported from contacts list',
+          }),
+        });
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+      return;
+    }
+    saveConnectionRecordFromUser({
+      requestId: reportTarget.requestId,
+      userId: reportTarget.userId,
+      name: reportTarget.name,
+      avatarUrl: reportTarget.avatarUrl,
+      aliasName: reportTarget.aliasName ?? null,
+      phoneNumber: reportTarget.phoneNumber ?? null,
+    }, 'reported', reason);
+    setInfo(`${reportTarget.name} reported for ${reason.toLowerCase()}.`);
+    setReportTarget(null);
   };
 
   const findPeople = async () => {
@@ -369,40 +508,113 @@ export function ContactsPane({ section }: { section: string }) {
   if (section !== 'contacts' && section !== 'updates') return null;
 
   if (section === 'updates') {
+    if (isMobile) {
+      return (
+        <section className="screenPane mobileUpdatesScreen">
+          <div className="mobilePageHeader">
+            <h2>Updates</h2>
+            <div className="mobilePageHeaderActions">
+              <button type="button" className="mobileHeaderIconButton" aria-label="Search updates">
+                <span className="mobileHeaderGlyph mobileHeaderGlyph-search" />
+              </button>
+              <button type="button" className="mobileHeaderIconButton" aria-label="Open updates menu">
+                <span className="mobileHeaderGlyph mobileHeaderGlyph-more" />
+              </button>
+            </div>
+          </div>
+
+          <div className="mobileSectionLabel">Status</div>
+          <button type="button" className="mobileStatusOwnerCard" onClick={() => (myStatus ? setActiveStatusId(myStatus.id) : postStatus())}>
+            <div className="rowStart">
+              <div className="statusAvatarRing myStatusRing">
+                <Avatar name={me?.name || 'My status'} avatarUrl={myStatus?.avatarUrl ?? me?.avatarUrl ?? null} />
+              </div>
+              <div className="cardText">
+                <strong>Add status</strong>
+                <span>{myStatus ? 'Tap to view your latest update' : 'Disappears after 24 hours'}</span>
+              </div>
+            </div>
+          </button>
+
+          <div className="mobileStatusList">
+            {recentStatuses.length ? recentStatuses.map((status) => (
+              <button key={status.id} type="button" className="mobileStatusRow" onClick={() => viewStatus(status.id)}>
+                <div className="rowStart">
+                  <div className="statusAvatarRing freshStatusRing">
+                    <Avatar name={status.name} avatarUrl={status.avatarUrl} />
+                  </div>
+                  <div className="cardText">
+                    <strong>{status.name}</strong>
+                    <span>{new Date(status.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </div>
+              </button>
+            )) : <div className="compactEmpty requestEmptyCard">No updates yet.</div>}
+            {viewedStatuses.length ? <div className="mobileSectionSubLabel">Viewed updates</div> : null}
+            {viewedStatuses.map((status) => (
+              <button key={status.id} type="button" className="mobileStatusRow mobileStatusRow-viewed" onClick={() => viewStatus(status.id)}>
+                <div className="rowStart">
+                  <div className="statusAvatarRing viewedStatusRing">
+                    <Avatar name={status.name} avatarUrl={status.avatarUrl} />
+                  </div>
+                  <div className="cardText">
+                    <strong>{status.name}</strong>
+                    <span>{new Date(status.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <button type="button" className="mobileMiniFab mobileMiniFab-edit" onClick={() => setStatusText((current) => current)}>
+            +
+          </button>
+          <button type="button" className="mobileFab" onClick={postStatus}>
+            +
+          </button>
+        </section>
+      );
+    }
+
     return (
       <section className="screenPane updatesScreen">
         <div className="statusDesktopLayout">
           <aside className="statusSidebar">
             <div className="statusSidebarHeader">
-              <div>
+              <div className="statusSidebarTitleBlock">
                 <h2>Status</h2>
-                <p>Share updates that disappear after 24 hours.</p>
               </div>
-              <button className="ghostIconButton" type="button" onClick={postStatus} aria-label="Post status">
-                +
-              </button>
-            </div>
-
-            <div className="statusSearchBar">
-              <span className="statusSearchIcon">o</span>
-              <span>Search status</span>
+              <div className="statusSidebarActions">
+                <button className="ghostIconButton statusAddButton" type="button" onClick={postStatus} aria-label="Post status">
+                  <span className="statusAddGlyph" aria-hidden="true">+</span>
+                </button>
+                <button className="ghostIconButton statusMoreButton" type="button" aria-label="More status options">
+                  <span className="statusMoreGlyph" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                </button>
+              </div>
             </div>
 
             <div className="statusSidebarScroll">
               <div className="statusComposerCard statusComposerRailCard">
-                <button type="button" className="statusRow statusOwnerRow statusPanelRow" onClick={postStatus}>
+                <button type="button" className="statusRow statusOwnerRow statusPanelRow" onClick={() => (myStatus ? setActiveStatusId(myStatus.id) : postStatus())}>
                   <div className="rowStart">
-                    <div className="statusAvatarRing myStatusRing">
-                      <Avatar name="My status" avatarUrl={null} />
+                    <div className="statusOwnerAvatarShell">
+                      <div className="statusAvatarRing myStatusRing">
+                        <Avatar name={me?.name || 'My status'} avatarUrl={myStatus?.avatarUrl ?? me?.avatarUrl ?? null} />
+                      </div>
+                      <span className="statusOwnerBadge" aria-hidden="true">+</span>
                     </div>
                     <div className="cardText">
                       <strong>My status</strong>
-                      <span>{myStatus ? myStatus.text : 'Click to add status update'}</span>
+                      <span>{myStatus ? 'Tap to view your latest status' : 'Click to add status update'}</span>
                     </div>
                   </div>
-                  <span className="rowActionLabel">Post</span>
                 </button>
-                <div className="composerInputRow">
+                <div className="composerInputRow statusComposerInputRow">
                   <input
                     className="input"
                     placeholder="Write a text status"
@@ -412,7 +624,7 @@ export function ContactsPane({ section }: { section: string }) {
                       if (event.key === 'Enter') postStatus();
                     }}
                   />
-                  <button className="primaryBtn" onClick={postStatus}>
+                  <button className="primaryBtn statusShareButton" onClick={postStatus}>
                     Share
                   </button>
                 </div>
@@ -444,7 +656,7 @@ export function ContactsPane({ section }: { section: string }) {
 
               <div className="statusGroup">
                 <p className="statusGroupLabel">Recent</p>
-                <div className="contactList">
+                <div className="statusList">
                   {recentStatuses.length ? recentStatuses.map((status) => (
                     <button key={status.id} type="button" className="statusRow contactRow tappableRow statusPanelRow" onClick={() => viewStatus(status.id)}>
                       <div className="rowStart">
@@ -453,11 +665,10 @@ export function ContactsPane({ section }: { section: string }) {
                         </div>
                         <div className="cardText">
                           <strong>{status.name}</strong>
-                          <span>{new Date(status.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span>{formatStatusListTime(status.createdAt)}</span>
                           {renderStatusPreview(status)}
                         </div>
                       </div>
-                      <span className="rowActionLabel">Seen</span>
                     </button>
                   )) : <div className="compactEmpty">No new status updates right now.</div>}
                 </div>
@@ -465,20 +676,20 @@ export function ContactsPane({ section }: { section: string }) {
 
               <div className="statusGroup">
                 <p className="statusGroupLabel">Viewed</p>
-                <div className="contactList">
+                <div className="statusList">
                   {viewedStatuses.length ? viewedStatuses.map((status) => (
-                    <div key={status.id} className="statusRow contactRow statusPanelRow">
+                    <button key={status.id} type="button" className="statusRow contactRow tappableRow statusPanelRow" onClick={() => viewStatus(status.id)}>
                       <div className="rowStart">
                         <div className="statusAvatarRing viewedStatusRing">
                           <Avatar name={status.name} avatarUrl={status.avatarUrl} />
                         </div>
                         <div className="cardText">
                           <strong>{status.name}</strong>
-                          <span>{new Date(status.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span>{formatStatusListTime(status.createdAt)}</span>
                           {renderStatusPreview(status)}
                         </div>
                       </div>
-                    </div>
+                    </button>
                   )) : <div className="compactEmpty">Viewed statuses will appear here.</div>}
                 </div>
               </div>
@@ -486,12 +697,60 @@ export function ContactsPane({ section }: { section: string }) {
           </aside>
 
           <div className="statusStage">
-            <div className="statusStageCenter">
-              <div className="statusStageGlyph">O</div>
-              <h3>Share status updates</h3>
-              <p>Share photos, videos and text that disappear after 24 hours.</p>
-            </div>
-            <div className="statusStageFooter">Your status updates are end-to-end encrypted</div>
+            {activeStatus ? (
+              <div className="statusViewerCard">
+                <div className="statusViewerHeader">
+                  <div className="rowStart">
+                    <div className={activeStatus.mine ? 'statusAvatarRing myStatusRing' : viewedStatusIds.includes(activeStatus.id) ? 'statusAvatarRing viewedStatusRing' : 'statusAvatarRing freshStatusRing'}>
+                      <Avatar name={activeStatus.name} avatarUrl={activeStatus.avatarUrl} />
+                    </div>
+                    <div className="cardText">
+                      <strong>{activeStatus.mine ? 'My status' : activeStatus.name}</strong>
+                      <span>{formatStatusTime(activeStatus.createdAt)}</span>
+                    </div>
+                  </div>
+                  <div className="contactActions">
+                    {activeStatus.linkUrl ? (
+                      <button type="button" className="ghostBtn smallGhost" onClick={() => openStatusLink(activeStatus)}>
+                        Open link
+                      </button>
+                    ) : null}
+                    {activeStatus.mine ? (
+                      <button type="button" className="ghostBtn smallGhost" onClick={deleteMyStatus}>
+                        Delete
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="statusViewerBody">
+                  {activeStatus.mediaUrl ? (
+                    activeStatus.mediaType === 'video' ? (
+                      <video src={activeStatus.mediaUrl} className="statusViewerMedia" controls autoPlay playsInline />
+                    ) : (
+                      <img src={activeStatus.mediaUrl} alt={`${activeStatus.name} status`} className="statusViewerMedia" />
+                    )
+                  ) : (
+                    <div className="statusViewerTextCard">
+                      <div className="statusStageGlyph">O</div>
+                      <h3>{activeStatus.text || 'Status update'}</h3>
+                      <p>{activeStatus.linkUrl ? activeStatus.linkUrl : 'Share photos, videos and text that disappear after 24 hours.'}</p>
+                    </div>
+                  )}
+                  {activeStatus.text ? <div className="statusViewerCaption">{activeStatus.text}</div> : null}
+                </div>
+                <div className="statusStageFooter">Your status updates are end-to-end encrypted</div>
+              </div>
+            ) : (
+              <>
+                <div className="statusStageCenter">
+                  <div className="statusStageGlyph">O</div>
+                  <h3>Share status updates</h3>
+                  <p>Share photos, videos and text that disappear after 24 hours.</p>
+                </div>
+                <div className="statusStageFooter">Your status updates are end-to-end encrypted</div>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -518,11 +777,11 @@ export function ContactsPane({ section }: { section: string }) {
       {mobileContactsView === 'people' ? (
         <section className="sheetCard">
           <div className="sectionTop">
-            <h2>People ({contacts.length})</h2>
+            <h2>People ({visibleContacts.length})</h2>
           </div>
           <div className="miniHero">
             <div>
-              <strong>{contacts.length}</strong>
+              <strong>{visibleContacts.length}</strong>
               <span>saved contacts</span>
             </div>
             <div>
@@ -541,8 +800,8 @@ export function ContactsPane({ section }: { section: string }) {
                   <div className="rowStart">
                     <Avatar name={request.fromUser.name} avatarUrl={request.fromUser.avatarUrl} />
                     <div className="cardText">
-                      <strong>{request.fromUser.name}</strong>
-                      <span>{request.phoneNumber || request.aliasName || 'Wants to connect with you'}</span>
+                      <strong>{request.fromUser.name || request.fromUser.username || 'Unknown user'}</strong>
+                      <span>{request.phoneNumber || request.aliasName || `@${request.fromUser.username}` || 'Wants to connect with you'}</span>
                     </div>
                   </div>
                   <div className="contactActions">
@@ -558,28 +817,37 @@ export function ContactsPane({ section }: { section: string }) {
             </div>
           )}
           <div className="contactList">
-            {contacts.map((contact) => (
-              <button
-                key={contact.id}
-                className={contact.registeredUser ? 'contactRow tappableRow' : 'contactRow'}
-                onClick={contact.registeredUser ? () => void startDm(contact.registeredUser!.id) : undefined}
-                disabled={!contact.registeredUser}
-                type="button"
-              >
-                <div className="rowStart">
-                  <Avatar name={contact.name} avatarUrl={contact.avatarUrl} />
-                  <div className="cardText">
-                    <strong>{contact.name}</strong>
-                    <span>{contact.email || contact.phoneNumber || 'No details'}</span>
-                    {contact.registeredUser ? <span className="tapHint">Tap to open chat</span> : null}
+            {visibleContacts.map((contact) => (
+              <div key={contact.id} className="requestCard contactActionCard">
+                <button
+                  className={contact.registeredUser ? 'contactRow tappableRow' : 'contactRow'}
+                  onClick={contact.registeredUser ? () => void startDm(contact.registeredUser!.id) : undefined}
+                  disabled={!contact.registeredUser}
+                  type="button"
+                >
+                  <div className="rowStart">
+                    <Avatar name={contact.name} avatarUrl={contact.avatarUrl} />
+                    <div className="cardText">
+                      <strong>{contact.name}</strong>
+                      <span>{contact.email || contact.phoneNumber || 'No details'}</span>
+                      {contact.registeredUser ? <span className="tapHint">Tap to open chat</span> : null}
+                    </div>
                   </div>
+                  {contact.registeredUser ? (
+                    <span className="rowActionLabel">Open</span>
+                  ) : (
+                    <span className="miniText">Not on HelloToo</span>
+                  )}
+                </button>
+                <div className="contactActions">
+                  <button type="button" className="ghostBtn smallGhost" onClick={() => markContactSafety(contact, 'blocked')}>
+                    Block
+                  </button>
+                  <button type="button" className="ghostBtn smallGhost" onClick={() => markContactSafety(contact, 'reported')}>
+                    Report
+                  </button>
                 </div>
-                {contact.registeredUser ? (
-                  <span className="rowActionLabel">Open</span>
-                ) : (
-                  <span className="miniText">Not on HelloToo</span>
-                )}
-              </button>
+              </div>
             ))}
           </div>
         </section>
@@ -591,14 +859,14 @@ export function ContactsPane({ section }: { section: string }) {
             <h2>Status</h2>
           </div>
           <div className="statusComposerCard">
-            <button type="button" className="statusRow statusOwnerRow" onClick={postStatus}>
+            <button type="button" className="statusRow statusOwnerRow" onClick={() => (myStatus ? setActiveStatusId(myStatus.id) : postStatus())}>
               <div className="rowStart">
                 <div className="statusAvatarRing myStatusRing">
-                  <Avatar name="My status" avatarUrl={null} />
+                  <Avatar name={me?.name || 'My status'} avatarUrl={myStatus?.avatarUrl ?? me?.avatarUrl ?? null} />
                 </div>
                 <div className="cardText">
                   <strong>My status</strong>
-                  <span>{myStatus ? myStatus.text : 'Click to add status update'}</span>
+                  <span>{myStatus ? 'Tap to view your latest status' : 'Click to add status update'}</span>
                 </div>
               </div>
               <span className="rowActionLabel">Post</span>
@@ -668,7 +936,7 @@ export function ContactsPane({ section }: { section: string }) {
             <p className="statusGroupLabel">Viewed</p>
             <div className="contactList">
               {viewedStatuses.length ? viewedStatuses.map((status) => (
-                <div key={status.id} className="statusRow contactRow">
+                <button key={status.id} type="button" className="statusRow contactRow tappableRow" onClick={() => viewStatus(status.id)}>
                   <div className="rowStart">
                     <div className="statusAvatarRing viewedStatusRing">
                       <Avatar name={status.name} avatarUrl={status.avatarUrl} />
@@ -679,10 +947,47 @@ export function ContactsPane({ section }: { section: string }) {
                       {renderStatusPreview(status)}
                     </div>
                   </div>
-                </div>
+                </button>
               )) : <div className="compactEmpty">Viewed statuses will appear here.</div>}
             </div>
           </div>
+
+          {activeStatus ? (
+            <div className="statusMobileViewer">
+              <div className="statusViewerHeader">
+                <div className="rowStart">
+                  <div className={activeStatus.mine ? 'statusAvatarRing myStatusRing' : viewedStatusIds.includes(activeStatus.id) ? 'statusAvatarRing viewedStatusRing' : 'statusAvatarRing freshStatusRing'}>
+                    <Avatar name={activeStatus.name} avatarUrl={activeStatus.avatarUrl} />
+                  </div>
+                  <div className="cardText">
+                    <strong>{activeStatus.mine ? 'My status' : activeStatus.name}</strong>
+                    <span>{formatStatusTime(activeStatus.createdAt)}</span>
+                  </div>
+                </div>
+                {activeStatus.mine ? (
+                  <button type="button" className="ghostBtn smallGhost" onClick={deleteMyStatus}>
+                    Delete
+                  </button>
+                ) : null}
+              </div>
+              <div className="statusViewerBody">
+                {activeStatus.mediaUrl ? (
+                  activeStatus.mediaType === 'video' ? (
+                    <video src={activeStatus.mediaUrl} className="statusViewerMedia" controls autoPlay playsInline />
+                  ) : (
+                    <img src={activeStatus.mediaUrl} alt={`${activeStatus.name} status`} className="statusViewerMedia" />
+                  )
+                ) : (
+                  <div className="statusViewerTextCard">
+                    <div className="statusStageGlyph">O</div>
+                    <h3>{activeStatus.text || 'Status update'}</h3>
+                    <p>{activeStatus.linkUrl ? activeStatus.linkUrl : 'Share photos, videos and text that disappear after 24 hours.'}</p>
+                  </div>
+                )}
+                {activeStatus.text ? <div className="statusViewerCaption">{activeStatus.text}</div> : null}
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -735,10 +1040,10 @@ export function ContactsPane({ section }: { section: string }) {
                 {lookupResult.existingContact ? (
                   <span>Already connected on HelloToo.</span>
                 ) : lookupResult.existingRequest ? (
-                  <span>{lookupResult.existingRequest.direction === 'outgoing' ? 'Request already sent.' : 'This user has requested you already.'}</span>
+                  <span>{lookupResult.existingRequest.direction === 'outgoing' ? 'Connect request already sent.' : 'This user already wants to connect with you.'}</span>
                 ) : (
                   <button className="primaryBtn" onClick={() => void sendConnectionRequest()} disabled={busy}>
-                    Send connection request
+                    Send connect request
                   </button>
                 )}
               </div>
@@ -746,7 +1051,7 @@ export function ContactsPane({ section }: { section: string }) {
           ) : lookupResult ? (
             <div className="compactEmpty">No server user found for this number yet.</div>
           ) : null}
-          <p className="miniText">Enter a phone number. If that number exists on this server, you can send a connection request before chatting.</p>
+          <p className="miniText">Enter a phone number. If that number exists on this server, you can send a connect request before chatting.</p>
         </section>
       ) : null}
 
@@ -786,6 +1091,29 @@ export function ContactsPane({ section }: { section: string }) {
             {!discoverUsers.length ? <div className="compactEmpty">No results yet. Search by name, phone, or email.</div> : null}
           </div>
         </section>
+      ) : null}
+      {reportTarget ? (
+        <div className="modalScrim" onClick={() => setReportTarget(null)}>
+          <div className="connectModalCard profileDetailCard" onClick={(event) => event.stopPropagation()}>
+            <div className="sectionTop">
+              <h2>Report {reportTarget.name}</h2>
+              <button className="ghostBtn smallGhost" onClick={() => setReportTarget(null)}>
+                Close
+              </button>
+            </div>
+            <p className="miniText">Choose the type of report you want to make.</p>
+            <div className="requestStack">
+              {reportReasons.map((reason) => (
+                <button key={reason} type="button" className="requestCard chatMatchCard" onClick={() => void submitReportReason(reason)}>
+                  <div className="cardText">
+                    <strong>{reason}</strong>
+                    <span>{reason === 'Spam messages' ? 'Repeated spam or promotional messages.' : reason === 'Fraud or scam' ? 'Fraud, money scam, cheating or fake payment attempt.' : reason === 'Abusive behaviour' ? 'Harassment, threats or abusive behaviour.' : reason === 'Unwanted messages' ? 'Messages you do not want from this contact.' : 'Fake identity or misleading profile details.'}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

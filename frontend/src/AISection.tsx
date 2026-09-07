@@ -1,0 +1,169 @@
+import { useMemo, useState } from 'react';
+import { useApp } from './AppContext';
+import dipAiAvatar from './assets/dip-ai-avatar.svg';
+import './index.css';
+
+type AiMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+};
+
+const quickPrompts = [
+  '/imagine a car race on mars',
+  'What are the most popular shows on Netflix?',
+  'Give me a recipe for banana bread',
+  'Help me study faster',
+];
+
+let aiMessageCounter = 0;
+
+function nextAiMessageId(prefix: 'user' | 'ai') {
+  aiMessageCounter += 1;
+  return `${prefix}-${aiMessageCounter}`;
+}
+
+function buildAiReply(input: string) {
+  const text = input.trim();
+  const lower = text.toLowerCase();
+
+  if (!text) return 'Ask me anything and I will try to help.';
+  if (lower.includes('hello') || lower.includes('hi')) return 'Hello! I am DIP AI. Ask me anything for free.';
+  if (lower.includes('bio')) return 'Try this bio: Building, learning, and staying kind every day.';
+  if (lower.includes('quote')) return 'Small steps every day still build something big.';
+  if (lower.includes('plan my day')) return 'Start with your hardest task first, keep one break after every focused block, and finish by planning tomorrow in 5 minutes.';
+  if (lower.includes('javascript')) return 'JavaScript is the language that makes web pages interactive. It can update content, react to clicks, and talk to servers.';
+  if (lower.includes('react')) return 'React helps you build UI from reusable components. State changes re-render the screen with fresh data.';
+  if (lower.includes('password')) return 'Use a long password with words or a passphrase, and avoid reusing the same password across apps.';
+  if (lower.includes('pin')) return 'A good PIN should be 4 to 8 digits and should not be easy to guess like 1234 or your birth year.';
+  if (lower.includes('study')) return 'Study in short focused sessions, test yourself often, and explain the topic in your own words.';
+  if (lower.includes('code')) return 'Break the problem into smaller parts, test one part at a time, and keep the simplest working version first.';
+
+  return `Here is a quick answer about "${text}": start with the main goal, break it into smaller steps, and focus on the most important part first. Ask me a follow-up if you want a more exact answer.`;
+}
+
+export function AISection() {
+  const { setInfo } = useApp();
+  const [prompt, setPrompt] = useState('');
+  const [messages, setMessages] = useState<AiMessage[]>([
+    {
+      id: 'welcome',
+      role: 'assistant',
+      text: 'Hi, I am DIP AI. You can chat with me for free and ask anything.',
+    },
+  ]);
+
+  const canSend = useMemo(() => prompt.trim().length > 0, [prompt]);
+
+  const sendPrompt = (value?: string) => {
+    const nextPrompt = (value ?? prompt).trim();
+    if (!nextPrompt) return;
+
+    const userMessage: AiMessage = {
+      id: nextAiMessageId('user'),
+      role: 'user',
+      text: nextPrompt,
+    };
+    const aiMessage: AiMessage = {
+      id: nextAiMessageId('ai'),
+      role: 'assistant',
+      text: buildAiReply(nextPrompt),
+    };
+
+    setMessages((current) => [...current, userMessage, aiMessage]);
+    setPrompt('');
+    setInfo('AI replied');
+  };
+
+  const clearChat = () => {
+    setMessages([
+      {
+        id: 'welcome',
+        role: 'assistant',
+        text: 'Hi, I am DIP AI. You can chat with me for free and ask anything.',
+      },
+    ]);
+    setInfo('AI chat cleared');
+  };
+
+  return (
+    <section className="screenPane commandCenter aiScreen">
+      <div className="aiHeaderBar">
+        <div className="rowStart">
+          <img className="aiAvatar" src={dipAiAvatar} alt="DIP AI avatar" />
+          <div className="cardText">
+            <strong>DIP AI</strong>
+            <span>Free AI chat inside HelloToo</span>
+          </div>
+        </div>
+        <div className="contactActions">
+          <button type="button" className="ghostBtn smallGhost" onClick={clearChat}>
+            Clear chat
+          </button>
+        </div>
+      </div>
+
+      <div className="aiInfoBar">
+        <span>On DIP AI you can ask questions, get ideas, write text, and learn quickly.</span>
+        <button type="button" className="ghostBtn smallGhost">
+          Try it
+        </button>
+      </div>
+
+      <div className="aiStage">
+        <aside className="aiSidebar">
+          <div className="cardText aiSidebarHeader">
+            <strong>DIP AI</strong>
+            <span>Messages are saved in this screen only.</span>
+          </div>
+          <div className="aiSidebarPreview">
+            <img className="aiAvatar" src={dipAiAvatar} alt="DIP AI avatar" />
+            <div className="cardText">
+              <strong>DIP AI</strong>
+              <span>Ask anything for free</span>
+            </div>
+          </div>
+        </aside>
+
+        <div className="aiMainPane">
+          <div className="aiConversation">
+            <div className="aiNoticePill">
+              Messages are generated by DIP AI and may not always be perfect. Ask a follow-up for better answers.
+            </div>
+            {messages.map((message) => (
+              <div key={message.id} className={message.role === 'user' ? 'aiBubble aiBubbleUser' : 'aiBubble aiBubbleAssistant'}>
+                <strong>{message.role === 'user' ? 'You' : 'DIP AI'}</strong>
+                <span>{message.text}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="commandCard aiPromptStrip">
+            {quickPrompts.map((item) => (
+              <button key={item} type="button" className="ghostBtn smallGhost" onClick={() => sendPrompt(item)}>
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <div className="composerBar aiComposerBar">
+            <div className="composerInputRow">
+              <input
+                className="input"
+                placeholder="Type a message"
+                value={prompt}
+                onChange={(event) => setPrompt(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') sendPrompt();
+                }}
+              />
+              <button type="button" className="primaryBtn composerSend" onClick={() => sendPrompt()} disabled={!canSend}>
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -44,6 +44,11 @@ Push-Location $frontendDir
 npm run build
 Pop-Location
 
+Write-Host "Building backend..." -ForegroundColor Cyan
+Push-Location $backendDir
+npm run build
+Pop-Location
+
 Start-Process powershell -ArgumentList @(
   "-NoExit",
   "-Command",

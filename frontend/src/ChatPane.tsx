@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { EmojiClickData } from 'emoji-picker-react';
-import { Avatar, fmtTime, lastSeen, messageTypeFromMime, playNotification, readFileAsDataUrl, showDesktopNotification } from './App';
-import type { Message, CallLog } from './App';
+import { Avatar, fmtDate, fmtTime, lastSeen, messageTypeFromMime, playNotification, readFileAsDataUrl, showDesktopNotification } from './App';
+import type { Message, CallLog } from './types';
 import { useApp } from './AppContext';
 import { MessageComposer } from './MessageComposer';
 import './index.css';
 
 type IncomingTypingEvent = { chatId: string; userId: string; isTyping: boolean };
 type PresenceEvent = { userId: string; isOnline: boolean; lastSeenAt: string | null };
+type ChatReadEvent = { chatId: string; userId: string; readAt: string };
 type MessageDeletedEvent = {
   messageId: string;
   chatId: string;
@@ -48,6 +49,7 @@ type LookupResult = {
   existingRequest: null | { id: string; status: string; direction: 'incoming' | 'outgoing' };
 };
 type DetailUser = {
+  id?: string;
   name: string;
   avatarUrl?: string | null;
   phoneNumber?: string | null;
@@ -57,6 +59,25 @@ type DetailUser = {
   isOnline?: boolean;
   lastSeenAt?: string | null;
 };
+type ReportDetailTarget = DetailUser | null;
+type BlockTarget = DetailUser | null;
+type ChatLockConfig = {
+  pinHash: string;
+  passwordHash: string;
+};
+
+const defaultChatLockConfig: ChatLockConfig = {
+  pinHash: '',
+  passwordHash: '',
+};
+
+const reportReasons = [
+  'Spam messages',
+  'Fraud or scam',
+  'Abusive behaviour',
+  'Unwanted messages',
+  'Fake profile',
+] as const;
 type TimelineItem =
   | { kind: 'message'; createdAt: string; id: string; message: Message }
   | { kind: 'call'; createdAt: string; id: string; call: CallLog };
@@ -92,7 +113,13 @@ const formatTimelineDay = (iso: string) =>
 const isPaneNearBottom = (pane: HTMLDivElement | null, offset = 120) =>
   !pane || pane.scrollHeight - pane.scrollTop - pane.clientHeight < offset;
 
-export function ChatPane() {
+const formatGroupSubtitle = (names: string[]) => {
+  if (!names.length) return 'Group conversation';
+  if (names.length <= 6) return names.join(', ');
+  return `${names.slice(0, 6).join(', ')}...`;
+};
+
+export function ChatPane({ isSectionActive = true }: { isSectionActive?: boolean }) {
   const {
     contacts,
     setContacts,
@@ -109,11 +136,25 @@ export function ChatPane() {
     api,
     socket,
     isMobile,
+    setToken,
+    setMe,
     setInfo,
     setError,
+    setChatNotification,
+    notificationHistory,
+    removeNotificationEntry,
+    clearNotificationHistory,
+    saveConnectionRecordFromUser,
+    connectionRecords,
+    removeConnectionRecord,
     calls,
     setCalls,
     refreshCalls,
+    updateNotice,
+    applyStoredUpdate,
+    dismissStoredUpdate,
+    hashLockSecret,
+    lockApp,
   } = useApp();
 
   const [search, setSearch] = useState('');
@@ -128,14 +169,18 @@ export function ChatPane() {
   const [isRecording, setIsRecording] = useState(false);
   const [callSeconds, setCallSeconds] = useState(0);
   const [showConversationMenu, setShowConversationMenu] = useState(false);
+  const [showChatsMenu, setShowChatsMenu] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
-  const [connectName, setConnectName] = useState('');
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const [connectIdentifier, setConnectIdentifier] = useState('');
   const [lookupResult, setLookupResult] = useState<LookupResult | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<LookupUser | null>(null);
-  const [contactSaved, setContactSaved] = useState(false);
   const [connectBusy, setConnectBusy] = useState(false);
   const [detailUser, setDetailUser] = useState<DetailUser | null>(null);
+  const [reportDetailTarget, setReportDetailTarget] = useState<ReportDetailTarget>(null);
+  const [blockTarget, setBlockTarget] = useState<BlockTarget>(null);
+  const [blockReason, setBlockReason] = useState('');
+  const [reportReasonDetail, setReportReasonDetail] = useState('');
   const [incomingCall, setIncomingCall] = useState<IncomingCall>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [unseenNewMessages, setUnseenNewMessages] = useState(0);
@@ -150,15 +195,19 @@ export function ChatPane() {
       return [];
     }
   });
-  const [lockedChatIds, setLockedChatIds] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const saved = window.localStorage.getItem('helloto_locked_chats');
-      return saved ? JSON.parse(saved) as string[] : [];
-    } catch {
-      return [];
-    }
-  });
+  const [lockedChatIds, setLockedChatIds] = useState<string[]>([]);
+  const [chatLockConfig, setChatLockConfig] = useState<ChatLockConfig>(defaultChatLockConfig);
+  const [lockedChatsUnlocked, setLockedChatsUnlocked] = useState(false);
+  const [pendingLockChatId, setPendingLockChatId] = useState<string | null>(null);
+  const [showChatLockSetupModal, setShowChatLockSetupModal] = useState(false);
+  const [showChatUnlockModal, setShowChatUnlockModal] = useState(false);
+  const [chatLockMode, setChatLockMode] = useState<'pin' | 'password'>('pin');
+  const [chatLockSecret, setChatLockSecret] = useState('');
+  const [chatLockConfirmSecret, setChatLockConfirmSecret] = useState('');
+  const [showChatLockSecret, setShowChatLockSecret] = useState(false);
+  const [showChatLockConfirmSecret, setShowChatLockConfirmSecret] = useState(false);
+  const [chatUnlockSecret, setChatUnlockSecret] = useState('');
+  const [showChatUnlockSecret, setShowChatUnlockSecret] = useState(false);
 
   const msgEndRef = useRef<HTMLDivElement>(null);
   const messagesPaneRef = useRef<HTMLDivElement>(null);
@@ -171,15 +220,26 @@ export function ChatPane() {
   const audioChunksRef = useRef<Blob[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const conversationMenuRef = useRef<HTMLDivElement>(null);
+  const chatsMenuRef = useRef<HTMLDivElement>(null);
   const messageActionRef = useRef<HTMLDivElement>(null);
   const connectIdentifierRef = useRef<HTMLInputElement>(null);
   const outgoingCallTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previousTimelineLengthRef = useRef(0);
+
+  const getLockedChatIdsStorageKey = useCallback((userId: string) => `helloto_locked_chats_${userId}`, []);
+  const getChatLockConfigStorageKey = useCallback((userId: string) => `helloto_chat_lock_config_${userId}`, []);
+  const getChatLockSessionKey = useCallback((userId: string) => `helloto_chat_lock_open_${userId}`, []);
 
   const activeChat = useMemo(() => chats.find((chat) => chat.id === activeChatId) ?? null, [chats, activeChatId]);
+  const blockedUserIds = useMemo(
+    () => new Set(connectionRecords.filter((record) => record.disposition === 'blocked').map((record) => record.userId)),
+    [connectionRecords],
+  );
   const filteredChats = useMemo(
     () => chats.filter((chat) => {
       const matchesSearch = chat.title.toLowerCase().includes(search.trim().toLowerCase());
       if (!matchesSearch) return false;
+      if (chat.peer?.id && blockedUserIds.has(chat.peer.id)) return false;
       const isArchived = archivedChatIds.includes(chat.id);
       const isLocked = lockedChatIds.includes(chat.id);
       if (chatFilter === 'archived') return isArchived;
@@ -189,12 +249,28 @@ export function ChatPane() {
       if (chatFilter === 'groups') return chat.isGroup;
       return true;
     }),
-    [chats, search, chatFilter, archivedChatIds, lockedChatIds],
+    [chats, search, chatFilter, archivedChatIds, lockedChatIds, blockedUserIds],
   );
   const unreadChats = useMemo(() => chats.reduce((count, chat) => count + chat.unreadCount, 0), [chats]);
   const groupChats = useMemo(() => chats.filter((chat) => chat.isGroup).length, [chats]);
   const archivedChats = useMemo(() => chats.filter((chat) => archivedChatIds.includes(chat.id)).length, [chats, archivedChatIds]);
   const lockedChats = useMemo(() => chats.filter((chat) => lockedChatIds.includes(chat.id)).length, [chats, lockedChatIds]);
+  const hasLockedSection = useMemo(() => lockedChats > 0 || Boolean(chatLockConfig.pinHash || chatLockConfig.passwordHash), [lockedChats, chatLockConfig.passwordHash, chatLockConfig.pinHash]);
+  const notificationCount = notificationHistory.length;
+  const notificationGroups = useMemo(() => {
+    const groups = new Map<string, typeof notificationHistory>();
+    notificationHistory.forEach((entry) => {
+      const dayLabel = new Date(entry.createdAt).toLocaleDateString([], {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      });
+      const current = groups.get(dayLabel) ?? [];
+      current.push(entry);
+      groups.set(dayLabel, current);
+    });
+    return Array.from(groups.entries());
+  }, [notificationHistory]);
   const activeChatCalls = useMemo(() => calls.filter((call) => call.chatId === activeChatId), [calls, activeChatId]);
   const timelineItems = useMemo<TimelineItem[]>(() => {
     const callItems: TimelineItem[] = activeChatCalls.map((call) => ({
@@ -272,8 +348,59 @@ export function ChatPane() {
     if (!activeChatId) return [];
     return (typingUsers[activeChatId] ?? []).filter((id) => id !== me?.id);
   }, [typingUsers, activeChatId, me?.id]);
+  const activeTypingNames = useMemo(() => {
+    if (!activeTypingUsers.length || !activeChat) return [];
+    const roster = activeChat.isGroup
+      ? activeChat.members
+      : activeChat.peer
+        ? [activeChat.peer]
+        : [];
+    return activeTypingUsers
+      .map((userId) => roster.find((user) => user.id === userId)?.name)
+      .filter((name): name is string => Boolean(name));
+  }, [activeTypingUsers, activeChat]);
+  const activeTypingLabel = useMemo(() => {
+    if (!activeTypingNames.length) return '';
+    if (activeTypingNames.length === 1) return `${activeTypingNames[0]} is typing...`;
+    if (activeTypingNames.length === 2) return `${activeTypingNames[0]} and ${activeTypingNames[1]} are typing...`;
+    return `${activeTypingNames[0]} and others are typing...`;
+  }, [activeTypingNames]);
+  const activeChatSubtitle = useMemo(() => {
+    if (!activeChat) return '';
+    if (activeTypingLabel) return activeTypingLabel;
+    if (activeChat.peer) return lastSeen(activeChat.peer);
+    if (activeChat.isGroup) return formatGroupSubtitle(activeChat.members.map((member) => member.name));
+    return 'offline';
+  }, [activeChat, activeTypingLabel]);
+  const chatPaneTitle = chatFilter === 'archived' ? 'Archived' : chatFilter === 'locked' ? 'Locked chats' : isMobile ? 'HelloToo' : 'Chats';
+  const chatPaneDescription = chatFilter === 'archived'
+    ? 'These chats stay archived when new messages arrive.'
+    : chatFilter === 'locked'
+      ? 'Protected conversations stay hidden until you verify them.'
+      : '';
   const activeChatArchived = activeChat ? archivedChatIds.includes(activeChat.id) : false;
   const activeChatLocked = activeChat ? lockedChatIds.includes(activeChat.id) : false;
+  const canViewLockedChats = !chatLockConfig.pinHash && !chatLockConfig.passwordHash ? true : lockedChatsUnlocked;
+  const activeChatBlocked = Boolean(activeChat?.peer?.id && blockedUserIds.has(activeChat.peer.id));
+  const activeBlockedRecord = useMemo(
+    () => activeChat?.peer?.id
+      ? connectionRecords.find((record) => record.disposition === 'blocked' && record.userId === activeChat.peer?.id) ?? null
+      : null,
+    [activeChat?.peer?.id, connectionRecords],
+  );
+
+  const loadActiveChatMessages = useCallback(async (options?: { silent?: boolean }) => {
+    if (!token || !activeChatId) return;
+    if (!options?.silent) setLoadingMessages(true);
+    try {
+      const res = await api<{ messages: Message[] }>(`/chats/${activeChatId}/messages`, { token });
+      setMessages(res.messages);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      if (!options?.silent) setLoadingMessages(false);
+    }
+  }, [token, activeChatId, api, setMessages, setError]);
 
   const applyDeletedMessageUpdate = (payload: MessageDeletedEvent) => {
     setMessages((prev) => prev.filter((message) => message.id !== payload.messageId));
@@ -299,13 +426,123 @@ export function ChatPane() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem('helloto_locked_chats', JSON.stringify(lockedChatIds));
-  }, [lockedChatIds]);
+    if (!me?.id) return;
+    window.localStorage.setItem(getLockedChatIdsStorageKey(me.id), JSON.stringify(lockedChatIds));
+    window.dispatchEvent(new CustomEvent('helloto:chat-lock-updated'));
+  }, [getLockedChatIdsStorageKey, lockedChatIds, me?.id]);
+
+  useEffect(() => {
+    if (!me?.id) {
+      setLockedChatIds([]);
+      setChatLockConfig(defaultChatLockConfig);
+      setLockedChatsUnlocked(false);
+      return;
+    }
+    try {
+      const savedIds = window.localStorage.getItem(getLockedChatIdsStorageKey(me.id));
+      setLockedChatIds(savedIds ? JSON.parse(savedIds) as string[] : []);
+    } catch {
+      setLockedChatIds([]);
+    }
+    try {
+      const savedConfig = window.localStorage.getItem(getChatLockConfigStorageKey(me.id));
+      const nextConfig = savedConfig ? { ...defaultChatLockConfig, ...JSON.parse(savedConfig) as Partial<ChatLockConfig> } : defaultChatLockConfig;
+      setChatLockConfig(nextConfig);
+      setLockedChatsUnlocked(!(nextConfig.pinHash || nextConfig.passwordHash) || sessionStorage.getItem(getChatLockSessionKey(me.id)) === '1');
+    } catch {
+      setChatLockConfig(defaultChatLockConfig);
+      setLockedChatsUnlocked(true);
+    }
+  }, [getChatLockConfigStorageKey, getChatLockSessionKey, getLockedChatIdsStorageKey, me?.id]);
+
+  useEffect(() => {
+    const syncChatLockState = () => {
+      if (!me?.id) return;
+      try {
+        const savedIds = window.localStorage.getItem(getLockedChatIdsStorageKey(me.id));
+        setLockedChatIds(savedIds ? JSON.parse(savedIds) as string[] : []);
+      } catch {
+        setLockedChatIds([]);
+      }
+      try {
+        const savedConfig = window.localStorage.getItem(getChatLockConfigStorageKey(me.id));
+        const nextConfig = savedConfig ? { ...defaultChatLockConfig, ...JSON.parse(savedConfig) as Partial<ChatLockConfig> } : defaultChatLockConfig;
+        setChatLockConfig(nextConfig);
+        setLockedChatsUnlocked(!(nextConfig.pinHash || nextConfig.passwordHash) || sessionStorage.getItem(getChatLockSessionKey(me.id)) === '1');
+      } catch {
+        setChatLockConfig(defaultChatLockConfig);
+      }
+    };
+
+    window.addEventListener('helloto:chat-lock-updated', syncChatLockState as EventListener);
+    window.addEventListener('storage', syncChatLockState);
+    return () => {
+      window.removeEventListener('helloto:chat-lock-updated', syncChatLockState as EventListener);
+      window.removeEventListener('storage', syncChatLockState);
+    };
+  }, [getChatLockConfigStorageKey, getChatLockSessionKey, getLockedChatIdsStorageKey, me?.id]);
 
   const markAllChatsRead = () => {
     setChats((prev) => prev.map((chat) => ({ ...chat, unreadCount: 0 })));
     setInfo('All chats marked as read');
     setShowConversationMenu(false);
+  };
+
+  const openNewGroup = () => {
+    setChatFilter('groups');
+    setShowChatsMenu(false);
+    setInfo('Group creation setup will be added here next. For now, your group chats are filtered in the list.');
+  };
+
+  const openStarredMessages = () => {
+    setShowChatsMenu(false);
+    setInfo('Starred messages view will be added here next.');
+  };
+
+  const selectChats = () => {
+    setShowChatsMenu(false);
+    setInfo('Select chats mode will be added here next.');
+  };
+
+  const markAllChatsReadFromMenu = () => {
+    setChats((prev) => prev.map((chat) => ({ ...chat, unreadCount: 0 })));
+    setInfo('All chats marked as read');
+    setShowChatsMenu(false);
+  };
+
+  const lockWholeApp = () => {
+    setShowChatsMenu(false);
+    lockApp();
+    setInfo('App locked');
+  };
+
+  const logoutNow = () => {
+    sessionStorage.removeItem('helloto_session_token');
+    localStorage.removeItem('helloto_saved_account_token');
+    setShowChatsMenu(false);
+    setToken('');
+    setMe(null);
+  };
+
+  const openArchivedSection = () => {
+    setChatFilter('archived');
+    setShowChatsMenu(false);
+    setInfo('Showing archived chats');
+  };
+
+  const openLockedSection = () => {
+    if (!canViewLockedChats && (chatLockConfig.pinHash || chatLockConfig.passwordHash)) {
+      setShowChatUnlockModal(true);
+      setShowChatsMenu(false);
+      return;
+    }
+    setChatFilter('locked');
+    setShowChatsMenu(false);
+    setInfo('Showing locked chats');
+  };
+
+  const openAllChatsSection = () => {
+    setChatFilter('all');
   };
 
   const toggleArchiveChat = (chatId: string) => {
@@ -323,28 +560,67 @@ export function ChatPane() {
   };
 
   const toggleLockChat = (chatId: string) => {
-    setLockedChatIds((prev) => {
-      const next = prev.includes(chatId) ? prev.filter((id) => id !== chatId) : [chatId, ...prev];
-      return next;
-    });
     const chat = chats.find((entry) => entry.id === chatId);
-    setInfo(lockedChatIds.includes(chatId) ? `${chat?.title ?? 'Chat'} unlocked` : `${chat?.title ?? 'Chat'} locked`);
+    const isLocked = lockedChatIds.includes(chatId);
+    if (isLocked) {
+      if (!canViewLockedChats) {
+        setPendingLockChatId(chatId);
+        setShowChatUnlockModal(true);
+        return;
+      }
+      setLockedChatIds((prev) => prev.filter((id) => id !== chatId));
+      setInfo(`${chat?.title ?? 'Chat'} removed from locked chats`);
+      return;
+    }
+    if (!chatLockConfig.pinHash && !chatLockConfig.passwordHash) {
+      setPendingLockChatId(chatId);
+      setChatLockMode('pin');
+      setChatLockSecret('');
+      setChatLockConfirmSecret('');
+      setShowChatLockSecret(false);
+      setShowChatLockConfirmSecret(false);
+      setShowChatLockSetupModal(true);
+      return;
+    }
+    if (!canViewLockedChats) {
+      setPendingLockChatId(chatId);
+      setShowChatUnlockModal(true);
+      return;
+    }
+    setLockedChatIds((prev) => [chatId, ...prev]);
+    setInfo(`${chat?.title ?? 'Chat'} moved to locked chats`);
     setShowConversationMenu(false);
   };
 
   useEffect(() => {
-    if (!token || !activeChatId) return;
-    setLoadingMessages(true);
     setUnseenNewMessages(0);
-    api<{ messages: typeof messages }>(`/chats/${activeChatId}/messages`, { token })
-      .then((res) => setMessages(res.messages))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
-      .finally(() => setLoadingMessages(false));
-  }, [token, activeChatId, api, setMessages, setError]);
+    void loadActiveChatMessages();
+  }, [activeChatId, loadActiveChatMessages]);
+
+  useEffect(() => {
+    if (!token || !activeChatId) return;
+
+    const refreshReceipts = () => {
+      void loadActiveChatMessages({ silent: true });
+    };
+
+    const interval = window.setInterval(refreshReceipts, 4000);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') refreshReceipts();
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [token, activeChatId, loadActiveChatMessages]);
 
   useEffect(() => {
     const pane = messagesPaneRef.current;
     const changedChat = lastActiveChatIdRef.current !== activeChatId;
+    const previousTimelineLength = previousTimelineLengthRef.current;
+    const timelineExpanded = timelineBlocks.length > previousTimelineLength;
     const nearBottom = isPaneNearBottom(pane);
 
     if (changedChat) {
@@ -353,20 +629,23 @@ export function ChatPane() {
       setUnseenNewMessages(0);
       lastActiveChatIdRef.current = activeChatId;
       isNearBottomRef.current = true;
+      previousTimelineLengthRef.current = timelineBlocks.length;
       return;
     }
 
-    if (nearBottom || isNearBottomRef.current) {
+    if (timelineExpanded && (nearBottom || isNearBottomRef.current)) {
       msgEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       setShowScrollToBottom(false);
       setUnseenNewMessages(0);
     }
-  }, [timelineBlocks.length, activeChatId]);
+    previousTimelineLengthRef.current = timelineBlocks.length;
+  }, [activeChatId, loadingMessages, timelineBlocks.length]);
 
   useEffect(() => {
     if (!socket || !me?.id) return;
 
     const handleNewMessage = (message: (typeof messages)[number]) => {
+      if (blockedUserIds.has(message.sender.id)) return;
       const nearBottom = isPaneNearBottom(messagesPaneRef.current);
       const isMine = message.sender.id === me.id;
 
@@ -399,8 +678,34 @@ export function ChatPane() {
       }
       if (!isMine) {
         playNotification('received');
-        if (typeof document !== 'undefined' && document.hidden) {
-          void showDesktopNotification(message.sender.name, message.text || message.mediaName || 'New message');
+        setChatNotification((current) => {
+          const nextPreview = message.text || message.mediaName || 'New message';
+          if (current?.chatId === message.chatId) {
+            return {
+              ...current,
+              senderName: message.sender.name,
+              senderAvatarUrl: message.sender.avatarUrl ?? null,
+              preview: nextPreview,
+              unreadCount: current.unreadCount + 1,
+            };
+          }
+          const existingUnread = chats.find((chat) => chat.id === message.chatId)?.unreadCount ?? 0;
+          return {
+            chatId: message.chatId,
+            senderName: message.sender.name,
+            senderAvatarUrl: message.sender.avatarUrl ?? null,
+            preview: nextPreview,
+            unreadCount: Math.max(existingUnread + (message.chatId === activeChatId ? 0 : 1), 1),
+          };
+        });
+        if (typeof document !== 'undefined' && (document.hidden || !isSectionActive)) {
+          void showDesktopNotification('HelloToo', `${message.sender.name}: ${message.text || message.mediaName || 'New message'}`, {
+            icon: message.sender.avatarUrl ?? undefined,
+            tag: `chat-${message.chatId}`,
+            onClick: () => {
+              window.dispatchEvent(new CustomEvent('helloto:open-chat', { detail: { chatId: message.chatId } }));
+            },
+          });
         }
       }
     };
@@ -414,12 +719,31 @@ export function ChatPane() {
     };
 
     const handlePresence = ({ userId, isOnline, lastSeenAt }: PresenceEvent) => {
+      let shouldRefreshReceipts = false;
       setChats((prev) =>
         prev.map((chat) => {
           if (!chat.peer || chat.peer.id !== userId) return chat;
+          if (chat.id === activeChatId && isOnline) shouldRefreshReceipts = true;
           return { ...chat, peer: { ...chat.peer, isOnline, lastSeenAt } };
         }),
       );
+
+      if (!shouldRefreshReceipts && isOnline && activeChatId) {
+        const activeChatEntry = chats.find((chat) => chat.id === activeChatId);
+        if (activeChatEntry?.isGroup && activeChatEntry.members.some((member) => member.id === userId)) {
+          shouldRefreshReceipts = true;
+        }
+      }
+
+      if (shouldRefreshReceipts) {
+        void loadActiveChatMessages({ silent: true });
+      }
+    };
+
+    const handleChatRead = ({ chatId, userId }: ChatReadEvent) => {
+      if (userId === me.id) return;
+      if (chatId !== activeChatId) return;
+      void loadActiveChatMessages({ silent: true });
     };
 
     const handleIncomingCall = (payload: IncomingCall) => {
@@ -507,6 +831,7 @@ export function ChatPane() {
     socket.on('message:new', handleNewMessage);
     socket.on('typing:update', handleTypingUpdate);
     socket.on('presence:update', handlePresence);
+    socket.on('chat:read', handleChatRead);
     socket.on('call:incoming', handleIncomingCall);
     socket.on('call:accepted', handleAcceptedCall);
     socket.on('call:declined', handleDeclinedCall);
@@ -518,6 +843,7 @@ export function ChatPane() {
       socket.off('message:new', handleNewMessage);
       socket.off('typing:update', handleTypingUpdate);
       socket.off('presence:update', handlePresence);
+      socket.off('chat:read', handleChatRead);
       socket.off('call:incoming', handleIncomingCall);
       socket.off('call:accepted', handleAcceptedCall);
       socket.off('call:declined', handleDeclinedCall);
@@ -525,7 +851,7 @@ export function ChatPane() {
       socket.off('call:ended', handleEndedCall);
       socket.off('message:deleted', handleDeletedMessage);
     };
-  }, [socket, me?.id, activeChatId, setMessages, setTypingUsers, setChats, chats, setCalls, refreshCalls]);
+  }, [socket, me?.id, activeChatId, setMessages, setTypingUsers, setChats, chats, setCalls, refreshCalls, isSectionActive, setChatNotification, blockedUserIds, loadActiveChatMessages]);
 
   useEffect(() => {
     if (!socket || !activeChatId) return;
@@ -564,6 +890,18 @@ export function ChatPane() {
     window.addEventListener('pointerdown', handleClickAway);
     return () => window.removeEventListener('pointerdown', handleClickAway);
   }, [showConversationMenu]);
+
+  useEffect(() => {
+    if (!showChatsMenu) return;
+    const handleClickAway = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (showChatsMenu && !chatsMenuRef.current?.contains(target)) {
+        setShowChatsMenu(false);
+      }
+    };
+    window.addEventListener('pointerdown', handleClickAway);
+    return () => window.removeEventListener('pointerdown', handleClickAway);
+  }, [showChatsMenu]);
 
   useEffect(() => {
     if (!selectedMessageId) return;
@@ -638,8 +976,12 @@ export function ChatPane() {
 
   const sendMessage = async () => {
     if (!token || !activeChatId || (!text.trim() && !composerMedia) || sending) return;
-    if (lockedChatIds.includes(activeChatId)) {
-      setError('Unlock this chat before sending new messages.');
+    if (lockedChatIds.includes(activeChatId) && !canViewLockedChats) {
+      setError('Verify your locked chats PIN or password before sending messages.');
+      return;
+    }
+    if (activeChatBlocked) {
+      setError('This contact is blocked. Unblock them to send messages again.');
       return;
     }
     setSending(true);
@@ -934,18 +1276,87 @@ export function ChatPane() {
     setInfo('Call ended');
   };
 
-  const openChat = (chatId: string) => {
+  const openChat = useCallback((chatId: string) => {
+    if (lockedChatIds.includes(chatId) && !canViewLockedChats) {
+      setPendingLockChatId(chatId);
+      setShowChatUnlockModal(true);
+    }
     setActiveChatId(chatId);
+    setChatNotification((current) => current?.chatId === chatId ? null : current);
     setChats((prev) => prev.map((chat) => (chat.id === chatId ? { ...chat, unreadCount: 0 } : chat)));
     if (isMobile) setShowMobileChat(true);
+  }, [canViewLockedChats, isMobile, lockedChatIds, setActiveChatId, setChatNotification, setChats]);
+
+  const completePendingLockChat = useCallback((chatId: string | null) => {
+    if (!chatId) return;
+    setLockedChatIds((prev) => (prev.includes(chatId) ? prev : [chatId, ...prev]));
+    const chat = chats.find((entry) => entry.id === chatId);
+    setInfo(`${chat?.title ?? 'Chat'} moved to locked chats`);
+    setPendingLockChatId(null);
+  }, [chats, setInfo]);
+
+  const saveChatLockCredential = async () => {
+    const nextSecret = chatLockSecret.trim();
+    const confirmSecret = chatLockConfirmSecret.trim();
+    if (chatLockMode === 'pin') {
+      if (!/^\d{4,8}$/.test(nextSecret)) {
+        setError('Chat lock PIN must be 4 to 8 digits.');
+        return;
+      }
+    } else if (nextSecret.length < 4) {
+      setError('Chat lock password must be at least 4 characters.');
+      return;
+    }
+    if (nextSecret !== confirmSecret) {
+      setError('Secret and confirm secret do not match.');
+      return;
+    }
+    if (!me?.id) return;
+    const nextHash = await hashLockSecret(nextSecret);
+    const nextConfig = chatLockMode === 'pin'
+      ? { pinHash: nextHash, passwordHash: '' }
+      : { pinHash: '', passwordHash: nextHash };
+    window.localStorage.setItem(getChatLockConfigStorageKey(me.id), JSON.stringify(nextConfig));
+    sessionStorage.setItem(getChatLockSessionKey(me.id), '1');
+    setChatLockConfig(nextConfig);
+    setLockedChatsUnlocked(true);
+    setShowChatLockSetupModal(false);
+    setChatLockSecret('');
+    setChatLockConfirmSecret('');
+    window.dispatchEvent(new CustomEvent('helloto:chat-lock-updated'));
+    completePendingLockChat(pendingLockChatId);
+  };
+
+  const verifyChatUnlockSecret = async () => {
+    if (!me?.id) return;
+    const candidate = chatUnlockSecret.trim();
+    if (!candidate) {
+      setError('Enter your locked chats PIN or password first.');
+      return;
+    }
+    const pinHash = chatLockConfig.pinHash ? await hashLockSecret(candidate) : '';
+    const passwordHash = chatLockConfig.passwordHash ? await hashLockSecret(candidate) : '';
+    if ((chatLockConfig.pinHash && pinHash === chatLockConfig.pinHash) || (chatLockConfig.passwordHash && passwordHash === chatLockConfig.passwordHash)) {
+      sessionStorage.setItem(getChatLockSessionKey(me.id), '1');
+      setLockedChatsUnlocked(true);
+      setShowChatUnlockModal(false);
+      setChatUnlockSecret('');
+      window.dispatchEvent(new CustomEvent('helloto:chat-lock-updated'));
+      setInfo('Locked chats verified');
+      if (pendingLockChatId && !lockedChatIds.includes(pendingLockChatId)) {
+        completePendingLockChat(pendingLockChatId);
+      } else {
+        setPendingLockChatId(null);
+      }
+      return;
+    }
+    setError('Locked chats PIN or password is wrong.');
   };
 
   const resetConnectFlow = () => {
-    setConnectName('');
     setConnectIdentifier('');
     setLookupResult(null);
     setSelectedMatch(null);
-    setContactSaved(false);
     setConnectBusy(false);
   };
 
@@ -958,6 +1369,94 @@ export function ChatPane() {
   const openProfileDetails = (user: DetailUser | null | undefined) => {
     if (!user) return;
     setDetailUser(user);
+  };
+
+  const markDetailUserSafety = (disposition: 'blocked' | 'reported') => {
+    if (!detailUser) return;
+    if (disposition === 'reported') {
+      setReportReasonDetail('');
+      setReportDetailTarget(detailUser);
+      return;
+    }
+    setBlockReason('');
+    setBlockTarget(detailUser);
+  };
+
+  const submitDetailReportReason = async (reason: (typeof reportReasons)[number]) => {
+    if (!reportDetailTarget) return;
+    try {
+      if (token && reportDetailTarget.id) {
+        await api('/reports', {
+          method: 'POST',
+          token,
+          body: JSON.stringify({
+            targetUserId: reportDetailTarget.id,
+            reason,
+            detail: reportReasonDetail.trim() || 'Reported from contact detail view',
+          }),
+        });
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+      return;
+    }
+    saveConnectionRecordFromUser({
+      requestId: `contact-detail-${reportDetailTarget.id ?? reportDetailTarget.phoneNumber ?? reportDetailTarget.email ?? reportDetailTarget.name}`,
+      userId: reportDetailTarget.id ?? reportDetailTarget.phoneNumber ?? reportDetailTarget.email ?? reportDetailTarget.name,
+      name: reportDetailTarget.name,
+      avatarUrl: reportDetailTarget.avatarUrl ?? null,
+      aliasName: reportDetailTarget.email ?? null,
+      phoneNumber: reportDetailTarget.phoneNumber ?? null,
+    }, 'reported', reportReasonDetail.trim() ? `${reason}: ${reportReasonDetail.trim()}` : reason);
+    setInfo(`${reportDetailTarget.name} reported for ${reason.toLowerCase()}.`);
+    setReportReasonDetail('');
+    setReportDetailTarget(null);
+  };
+
+  const confirmBlockTarget = () => {
+    if (!blockTarget) return;
+    const targetId = blockTarget.id ?? blockTarget.phoneNumber ?? blockTarget.email ?? blockTarget.name;
+    saveConnectionRecordFromUser({
+      requestId: `contact-detail-${targetId}`,
+      userId: targetId,
+      name: blockTarget.name,
+      avatarUrl: blockTarget.avatarUrl ?? null,
+      aliasName: blockTarget.email ?? null,
+      phoneNumber: blockTarget.phoneNumber ?? null,
+    }, 'blocked', blockReason.trim() || 'Blocked contact');
+    setChats((prev) => prev.filter((chat) => chat.peer?.id !== targetId));
+    setContacts((prev) => prev.filter((contact) => contact.registeredUser?.id !== targetId && contact.id !== targetId));
+    if (activeChat?.peer?.id === targetId) {
+      setMessages([]);
+      setActiveChatId('');
+    }
+    setInfo(`${blockTarget.name} blocked. They cannot message you again until you unblock them.`);
+    setBlockReason('');
+    setBlockTarget(null);
+    setDetailUser(null);
+  };
+
+  const unblockActiveContact = () => {
+    if (!activeBlockedRecord) return;
+    removeConnectionRecord(activeBlockedRecord.requestId, 'blocked');
+    setInfo(`${activeBlockedRecord.name} unblocked. They can send messages again.`);
+  };
+
+  const deleteBlockedMessages = () => {
+    if (!activeChat) return;
+    setMessages([]);
+    setChats((prev) => prev.map((chat) => (chat.id === activeChat.id ? { ...chat, lastMessage: null } : chat)));
+    setInfo('All messages in this blocked chat were cleared.');
+  };
+
+  const deleteBlockedContact = () => {
+    if (!activeChat?.peer?.id) return;
+    const blockedUserId = activeChat.peer.id;
+    setContacts((prev) => prev.filter((contact) => contact.registeredUser?.id !== blockedUserId && contact.id !== blockedUserId));
+    setChats((prev) => prev.filter((chat) => chat.peer?.id !== blockedUserId));
+    setMessages([]);
+    setActiveChatId('');
+    setInfo('Blocked contact removed from chats and contacts.');
   };
 
   const getMediaSupportError = (feature: 'voice note' | 'call') => {
@@ -980,7 +1479,7 @@ export function ChatPane() {
     if (call.status === 'ringing') return `${call.mode === 'video' ? 'Video' : 'Voice'} call`;
     const minutes = Math.floor((call.durationSeconds ?? 0) / 60).toString().padStart(2, '0');
     const seconds = ((call.durationSeconds ?? 0) % 60).toString().padStart(2, '0');
-    return `${call.mode === 'video' ? 'Video' : 'Voice'} call • ${minutes}:${seconds}`;
+    return `${call.mode === 'video' ? 'Video' : 'Voice'} call â€¢ ${minutes}:${seconds}`;
   };
 
   const lookupContact = async () => {
@@ -990,43 +1489,9 @@ export function ChatPane() {
       const res = await api<LookupResult>(`/connections/lookup?identifier=${encodeURIComponent(connectIdentifier.trim())}`, { token });
       setLookupResult(res);
       setSelectedMatch(res.user);
-      setContactSaved(false);
       if (!res.user) {
         setInfo('No matching HelloToo account was found for that number or email.');
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setConnectBusy(false);
-    }
-  };
-
-  const saveMatchedContact = async () => {
-    if (!token || connectBusy || !selectedMatch) return;
-    const name = connectName.trim();
-    if (!name) {
-      setError('Enter the name you want to save for this contact.');
-      return;
-    }
-
-    setConnectBusy(true);
-    try {
-      const res = await api<{ contact: (typeof contacts)[number] }>('/contacts', {
-        method: 'POST',
-        token,
-        body: JSON.stringify({
-          name,
-          phoneNumber: selectedMatch.phoneNumber ?? (connectIdentifier.includes('@') ? '' : connectIdentifier.trim()),
-          email: selectedMatch.email ?? (connectIdentifier.includes('@') ? connectIdentifier.trim() : ''),
-          avatarUrl: selectedMatch.avatarUrl ?? '',
-        }),
-      });
-      setContacts((prev) => {
-        const withoutSame = prev.filter((contact) => contact.id !== res.contact.id);
-        return [res.contact, ...withoutSame];
-      });
-      setContactSaved(true);
-      setInfo(`Saved ${name}. You can send a chat request now.`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -1043,7 +1508,7 @@ export function ChatPane() {
         token,
         body: JSON.stringify({
           targetUserId: selectedMatch.id,
-          aliasName: connectName.trim() || selectedMatch.name,
+          aliasName: selectedMatch.name,
           phoneNumber: selectedMatch.phoneNumber ?? (connectIdentifier.includes('@') ? '' : connectIdentifier.trim()),
         }),
       });
@@ -1055,7 +1520,7 @@ export function ChatPane() {
             }
           : prev,
       );
-      setInfo(`Chat request sent to ${selectedMatch.name}. They can accept it from their People section.`);
+      setInfo(`Connect request sent to ${selectedMatch.name}. They can accept it from their Connections section.`);
       setShowConnectModal(false);
       resetConnectFlow();
     } catch (err: unknown) {
@@ -1126,7 +1591,7 @@ export function ChatPane() {
         <div className="cardText">
           <strong>{createCallSummary(call)}</strong>
           <span>
-            {call.direction === 'outgoing' ? 'You called' : `${call.user.name} called`} • {new Date(call.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            {call.direction === 'outgoing' ? 'You called' : `${call.user.name} called`} â€¢ {new Date(call.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </span>
           {call.status === 'completed' ? <span>Duration {duration}</span> : null}
         </div>
@@ -1138,6 +1603,39 @@ export function ChatPane() {
           )}
         </div>
       </div>
+    );
+  };
+
+  const getReceiptLabel = (message: Message) => {
+    const status = message.receipt?.status ?? 'sent';
+    if (status === 'read') return 'Read';
+    if (status === 'delivered') return 'Delivered';
+    return 'Sent';
+  };
+
+  const renderReceiptIcon = (message: Message) => {
+    const status = message.receipt?.status ?? 'sent';
+    return (
+      <svg className="messageReceiptIcon" viewBox="0 0 16 12" aria-hidden="true">
+        <path
+          d="M1.7 6.6L4.5 9.3L9.2 3.9"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {status !== 'sent' ? (
+          <path
+            d="M6.5 6.6L9.3 9.3L14 3.9"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ) : null}
+      </svg>
     );
   };
 
@@ -1176,7 +1674,15 @@ export function ChatPane() {
             ) : null}
             <div className="messageMeta">
               <span className="messageStamp">{fmtTime(message.createdAt)}</span>
-              {group.mine ? <span className={message.receipt?.status === 'read' ? 'readStamp' : ''}>{message.receipt?.status ?? 'sent'}</span> : null}
+              {group.mine ? (
+                <span
+                  className={`messageReceiptStamp ${message.receipt?.status === 'read' ? 'readStamp' : message.receipt?.status === 'delivered' ? 'deliveredStamp' : 'sentStamp'}`}
+                  aria-label={getReceiptLabel(message)}
+                  title={getReceiptLabel(message)}
+                >
+                  {renderReceiptIcon(message)}
+                </span>
+              ) : null}
             </div>
           </div>
         );
@@ -1192,62 +1698,163 @@ export function ChatPane() {
       <section className={showMobileChat ? 'screenPane chatSidebarPane hiddenMobile' : 'screenPane chatSidebarPane'}>
         <div className="waPaneHeader">
           <div className="sectionTitleRow">
-            <h2>Chats</h2>
+            <div className="chatPaneHeaderCopy">
+              <h2>{chatPaneTitle}</h2>
+              {chatPaneDescription ? <p className="chatSectionHeaderCopy">{chatPaneDescription}</p> : null}
+            </div>
             <div className="waPaneActions">
-              <button className="waPaneActionBtn" onClick={openConnectModal} aria-label="Add contact">+</button>
+              <button className="waPaneActionBtn" onClick={openConnectModal} aria-label="New chat">
+                <span className="waPaneActionGlyph waPaneActionGlyph-compose" aria-hidden="true" />
+              </button>
+              <div className="chatMenuWrap" ref={chatsMenuRef}>
+                <button className="waPaneActionBtn" onClick={() => setShowChatsMenu((value) => !value)} aria-label="Open chats menu" aria-expanded={showChatsMenu}>
+                  <span className="waPaneActionGlyph waPaneActionGlyph-more" aria-hidden="true" />
+                </button>
+                {showChatsMenu ? (
+                  <div className="chatMenuPanel sidebarChatsMenuPanel">
+                    <div className="chatMenuGroupLabel">Create</div>
+                    <button type="button" className="chatMenuItem sidebarMenuItem newGroupMenuItem" onClick={openNewGroup}>
+                      New group
+                    </button>
+                    <div className="sidebarMenuDivider" />
+                    <div className="chatMenuGroupLabel">Chats</div>
+                    <button type="button" className="chatMenuItem sidebarMenuItem starredMenuItem" onClick={openStarredMessages}>
+                      Starred messages
+                    </button>
+                    <button type="button" className="chatMenuItem sidebarMenuItem selectChatsMenuItem" onClick={selectChats}>
+                      Select chats
+                    </button>
+                    <button type="button" className="chatMenuItem sidebarMenuItem markReadMenuItem" onClick={markAllChatsReadFromMenu}>
+                      Mark all as read
+                    </button>
+                    <button type="button" className="chatMenuItem sidebarMenuItem lockedChatsMenuItem" onClick={openLockedSection}>
+                      Locked chats
+                    </button>
+                    <div className="sidebarMenuDivider" />
+                    <div className="chatMenuGroupLabel">Security</div>
+                    <button type="button" className="chatMenuItem sidebarMenuItem appLockMenuItem" onClick={lockWholeApp}>
+                      App lock
+                    </button>
+                    <button type="button" className="chatMenuItem sidebarMenuItem logoutMenuItem" onClick={logoutNow}>
+                      Log out
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
-          <p className="chatSectionHeaderCopy">{filteredChats.length} conversations ready{unreadChats ? ` - ${unreadChats} unread` : ''}</p>
         </div>
-        <input
-          className="input searchInput"
-          placeholder="Search or start new chat"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <label className="waSearchField">
+          <span className="waSearchIcon" aria-hidden="true" />
+          <input
+            className="input searchInput"
+            placeholder={isMobile ? 'Ask HelloToo AI or Search' : 'Search or start a new chat'}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
         <div className="chatFilterRow">
           <button className={chatFilter === 'all' ? 'chatFilterChip activeFilterChip' : 'chatFilterChip'} onClick={() => setChatFilter('all')}>
             All
           </button>
           <button className={chatFilter === 'unread' ? 'chatFilterChip activeFilterChip' : 'chatFilterChip'} onClick={() => setChatFilter('unread')}>
-            Unread {unreadChats ? `(${unreadChats})` : ''}
+            Unread {unreadChats ? <span className="chatFilterCount">{unreadChats}</span> : null}
           </button>
           <button className={chatFilter === 'groups' ? 'chatFilterChip activeFilterChip' : 'chatFilterChip'} onClick={() => setChatFilter('groups')}>
-            Groups {groupChats ? `(${groupChats})` : ''}
+            Favourites
           </button>
+          {isMobile ? (
+            <button className="chatFilterChip" type="button" onClick={openNewGroup}>
+              Groups
+            </button>
+          ) : null}
           <button className={chatFilter === 'archived' ? 'chatFilterChip activeFilterChip' : 'chatFilterChip'} onClick={() => setChatFilter('archived')}>
-            Archived {archivedChats ? `(${archivedChats})` : ''}
+            Archived {archivedChats ? <span className="chatFilterCount">{archivedChats}</span> : null}
           </button>
-          <button className={chatFilter === 'locked' ? 'chatFilterChip activeFilterChip' : 'chatFilterChip'} onClick={() => setChatFilter('locked')}>
-            Locked {lockedChats ? `(${lockedChats})` : ''}
-          </button>
+          {groupChats || archivedChats || lockedChats ? (
+            <div className="chatFilterMeta">
+              {groupChats ? <span>{groupChats} groups</span> : null}
+              {archivedChats ? <span>{archivedChats} archived</span> : null}
+              {lockedChats ? <span>{lockedChats} locked</span> : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="chatList">
+          {chatFilter !== 'all' ? (
+            <button type="button" className="chatSectionCard chatSectionBackCard" onClick={openAllChatsSection}>
+              <div className="rowStart">
+                <div className="chatSectionIcon chatSectionIcon-back" aria-hidden="true" />
+                <div className="cardText">
+                  <strong>All chats</strong>
+                  <span>Back to your main conversations</span>
+                </div>
+              </div>
+            </button>
+          ) : null}
+          {chatFilter === 'archived' ? (
+            <div className="archivedIntroCard">
+              <p>
+                These chats stay archived when new messages are received. Change this experience from Settings to Chats on your phone.
+              </p>
+            </div>
+          ) : null}
+          {chatFilter === 'all' && archivedChats > 0 ? (
+            <button type="button" className="chatSectionCard" onClick={openArchivedSection}>
+              <div className="rowStart">
+                <div className="chatSectionIcon chatSectionIcon-archived" aria-hidden="true" />
+                <div className="cardText">
+                  <strong>Archived</strong>
+                  <span>{archivedChats} chat{archivedChats === 1 ? '' : 's'} moved out of the main list</span>
+                </div>
+              </div>
+              <div className="cardMeta">
+                <p>{archivedChats}</p>
+              </div>
+            </button>
+          ) : null}
+          {chatFilter === 'all' && hasLockedSection ? (
+            <button type="button" className="chatSectionCard" onClick={openLockedSection}>
+              <div className="rowStart">
+                <div className="chatSectionIcon chatSectionIcon-locked" aria-hidden="true" />
+                <div className="cardText">
+                  <strong>Locked chats</strong>
+                  <span>{lockedChats ? `${lockedChats} protected chat${lockedChats === 1 ? '' : 's'}` : 'Protected by your locked chats PIN or password'}</span>
+                </div>
+              </div>
+              <div className="cardMeta">
+                <p>{lockedChats || ''}</p>
+              </div>
+            </button>
+          ) : null}
           {filteredChats.length ? filteredChats.map((chat) => (
             <button key={chat.id} className={chat.id === activeChatId ? 'chatCard activeCard' : 'chatCard'} onClick={() => openChat(chat.id)}>
               <div className="rowStart">
                 <Avatar name={chat.title} avatarUrl={chat.avatarUrl} group={chat.isGroup} />
                 <div className="cardText">
-                  <strong>{chat.title}</strong>
-                  <span>{chat.lastMessage?.text || (chat.peer ? lastSeen(chat.peer) : 'No messages yet')}</span>
+                  <strong>{lockedChatIds.includes(chat.id) && !canViewLockedChats ? 'Locked chat' : chat.title}</strong>
+                  <span className="chatPreviewLine">
+                    {(typingUsers[chat.id] ?? []).filter((id) => id !== me.id).length
+                      ? 'Typing...'
+                      : lockedChatIds.includes(chat.id) && !canViewLockedChats
+                        ? 'Verify to view messages'
+                        : chat.lastMessage?.text || (chat.peer ? lastSeen(chat.peer) : 'No messages yet')}
+                  </span>
                   <div className="chatCardFlags">
                     {archivedChatIds.includes(chat.id) ? <span className="chatStatePill">Archived</span> : null}
                     {lockedChatIds.includes(chat.id) ? <span className="chatStatePill lockedStatePill">Locked</span> : null}
                   </div>
-                  {chat.peer ? <span className="presenceLine">{chat.peer.isOnline ? 'online' : lastSeen(chat.peer)}</span> : null}
-                  <span className="tapHint">Tap to open chat</span>
                 </div>
               </div>
               <div className="cardMeta">
                 <p>{chat.lastMessage?.createdAt ? fmtTime(chat.lastMessage.createdAt) : ''}</p>
                 <div className="chatMetaLine">
-                  {chat.peer?.isOnline ? <span className="statusDot onlineDot" /> : <span className="statusDot offlineDot" />}
+                  {chat.peer?.isOnline ? <span className="statusDot onlineDot" /> : null}
                   {chat.unreadCount > 0 ? <span className="unreadBadge">{chat.unreadCount}</span> : null}
                 </div>
               </div>
             </button>
-          )) : <div className="compactEmpty chatListEmpty">No chats match this search yet.</div>}
+          )) : <div className="compactEmpty chatListEmpty">{chatFilter === 'archived' ? 'No archived chats yet.' : chatFilter === 'locked' ? 'No locked chats yet.' : 'No chats match this search yet.'}</div>}
         </div>
       </section>
 
@@ -1267,6 +1874,7 @@ export function ChatPane() {
                     openProfileDetails(
                       activeChat.peer
                         ? {
+                            id: activeChat.peer.id,
                             name: activeChat.peer.name,
                             avatarUrl: activeChat.peer.avatarUrl,
                             phoneNumber: activeChat.peer.phoneNumber,
@@ -1277,6 +1885,7 @@ export function ChatPane() {
                             lastSeenAt: activeChat.peer.lastSeenAt,
                           }
                         : {
+                            id: activeChat.id,
                             name: activeChat.title,
                             avatarUrl: activeChat.avatarUrl,
                             statusText: activeChat.isGroup ? `${activeChat.members.length} members in this chat` : 'Conversation details',
@@ -1289,54 +1898,75 @@ export function ChatPane() {
                 </button>
                 <div className="cardText">
                   <strong>{activeChat.title}</strong>
-                  <span className="presenceLine">
-                    {activeTypingUsers.length
-                      ? 'typing...'
-                      : activeChat.peer
-                        ? lastSeen(activeChat.peer)
-                        : activeChat.isGroup
-                          ? `${activeChat.members.length} members active`
-                          : 'offline'}
-                  </span>
+                  <span className="presenceLine">{activeChatSubtitle}</span>
                 </div>
               </div>
               <div className="contactActions callActionRow">
-                <button className="ghostBtn smallGhost callActionBtn voiceActionBtn" onClick={() => void startCall('voice')}>
-                  <span className="callActionIcon" aria-hidden="true">AU</span>
+                <button className="ghostBtn smallGhost callActionBtn voiceActionBtn callActionBtn-compact" onClick={() => void startCall('voice')}>
+                  <span className="callActionIcon callActionIcon-phone" aria-hidden="true" />
                   <span className="callActionText">
-                    <strong>Voice</strong>
-                    <small>Audio call</small>
+                    <strong>Call</strong>
                   </span>
                 </button>
-                <button className="ghostBtn smallGhost callActionBtn videoActionBtn" onClick={() => void startCall('video')}>
-                  <span className="callActionIcon" aria-hidden="true">VD</span>
+                <button className="ghostBtn smallGhost callActionBtn videoActionBtn callActionBtn-compact" onClick={() => void startCall('video')}>
+                  <span className="callActionIcon callActionIcon-video" aria-hidden="true" />
                   <span className="callActionText">
                     <strong>Video</strong>
-                    <small>Face to face</small>
                   </span>
+                </button>
+                <button className="ghostBtn smallGhost chatTopIconBtn" onClick={() => setInfo('Search in conversation will be added here next.')} aria-label="Search in conversation">
+                  <span className="waPaneActionGlyph waPaneActionGlyph-search" aria-hidden="true" />
                 </button>
                 <div className="chatMenuWrap" ref={conversationMenuRef}>
                   <button
-                    className="ghostBtn smallGhost menuToggleBtn"
+                    className="ghostBtn smallGhost menuToggleBtn chatTopIconBtn"
                     onClick={() => setShowConversationMenu((value) => !value)}
                     aria-label="Chat options"
                     aria-expanded={showConversationMenu}
                   >
-                    ...
+                    <span className="waPaneActionGlyph waPaneActionGlyph-more" aria-hidden="true" />
                   </button>
                   {showConversationMenu ? (
                     <div className="chatMenuPanel">
+                      <div className="chatMenuGroupLabel">Contact</div>
                       <button className="chatMenuItem" onClick={openConnectModal}>
                         Add contact
                       </button>
+                      <button className="chatMenuItem" onClick={() => {
+                        openProfileDetails(
+                          activeChat.peer
+                            ? {
+                                id: activeChat.peer.id,
+                                name: activeChat.peer.name,
+                                avatarUrl: activeChat.peer.avatarUrl,
+                                phoneNumber: activeChat.peer.phoneNumber,
+                                email: activeChat.peer.email,
+                                statusText: activeChat.peer.statusText,
+                                bio: activeChat.peer.bio,
+                                isOnline: activeChat.peer.isOnline,
+                                lastSeenAt: activeChat.peer.lastSeenAt,
+                              }
+                            : {
+                                id: activeChat.id,
+                                name: activeChat.title,
+                                avatarUrl: activeChat.avatarUrl,
+                                statusText: activeChat.isGroup ? `${activeChat.members.length} members in this chat` : 'Conversation details',
+                              },
+                        );
+                        setShowConversationMenu(false);
+                      }}>
+                        View contact
+                      </button>
+                      <div className="sidebarMenuDivider" />
+                      <div className="chatMenuGroupLabel">Chat</div>
                       <button className="chatMenuItem" onClick={markAllChatsRead}>
                         Mark all as read
                       </button>
                       <button className="chatMenuItem" onClick={() => activeChat && toggleArchiveChat(activeChat.id)}>
                         {activeChatArchived ? 'Unarchive chat' : 'Archive chat'}
                       </button>
-                      <button className="chatMenuItem" onClick={() => activeChat && toggleLockChat(activeChat.id)}>
-                        {activeChatLocked ? 'Unlock chat' : 'Lock chat'}
+                  <button className="chatMenuItem" onClick={() => activeChat && toggleLockChat(activeChat.id)}>
+                        {activeChatLocked ? (canViewLockedChats ? 'Remove from locked chats' : 'Verify locked chats') : 'Move to locked chats'}
                       </button>
                     </div>
                   ) : null}
@@ -1352,7 +1982,15 @@ export function ChatPane() {
 
             {activeChatLocked ? (
               <div className="privacyBar chatStateBanner lockedBanner">
-                This chat is locked. Unlock it from the menu to send new messages again.
+                {canViewLockedChats
+                  ? 'This chat stays inside Locked chats until you remove it from the locked section.'
+                  : 'This chat is locked. Verify your locked chats PIN or password to show all locked chats and messages.'}
+              </div>
+            ) : null}
+
+            {activeChatBlocked && activeBlockedRecord ? (
+              <div className="privacyBar chatStateBanner lockedBanner">
+                <strong>{activeBlockedRecord.name} is blocked.</strong> They cannot send you messages until you unblock them again.
               </div>
             ) : null}
 
@@ -1397,14 +2035,50 @@ export function ChatPane() {
             ) : null}
 
             <div className="messagesPaneWrap chatWallpaperPane">
-            <div className="messagesPane" ref={messagesPaneRef} onScroll={handleMessagesScroll}>
-              {loadingMessages ? <div className="typingPill">Loading messages...</div> : null}
-              {!loadingMessages && timelineItems.length === 0 ? <div className="typingPill">No messages yet. Say hi.</div> : null}
-              {timelineBlocks.map((item) => {
+              <div className="messagesPane" ref={messagesPaneRef} onScroll={handleMessagesScroll}>
+              {activeChatLocked && !canViewLockedChats ? (
+                <div className="chatStartMarker">
+                  <div className="chatSecurityNotice">
+                    Locked chats are hidden until you verify your PIN or password.
+                  </div>
+                  <div className="chatStartCard">
+                    <strong>Locked chat</strong>
+                    <span>Verify once to show all locked chats and messages in this session.</span>
+                  </div>
+                  <div className="contactActions centerActions">
+                    <button type="button" className="primaryBtn" onClick={() => setShowChatUnlockModal(true)}>
+                      Verify locked chats
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+              {!loadingMessages && timelineItems.length === 0 && activeChat ? (
+                <div className="chatStartMarker" aria-label="Chat start time">
+                  <div className="timelineDateDivider">
+                    <span>{new Date(activeChat.updatedAt).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                  </div>
+                  <div className="chatSecurityNotice">
+                    Messages and calls are end-to-end encrypted. Only people in this chat can read, listen to, or share them.
+                  </div>
+                  <div className="chatStartCard">
+                    <strong>Chat started</strong>
+                    <span>{fmtDate(activeChat.updatedAt)}</span>
+                  </div>
+                </div>
+              ) : null}
+              {timelineBlocks.map((item, index) => {
                 if (item.kind === 'date') {
                   return (
-                    <div key={item.id} className="timelineDateDivider">
-                      <span>{item.label}</span>
+                    <div key={item.id}>
+                      <div className="timelineDateDivider">
+                        <span>{item.label}</span>
+                      </div>
+                      {index === 0 ? (
+                        <div className="chatSecurityNotice">
+                          Messages and calls are end-to-end encrypted. Only people in this chat can read, listen to, or share them.
+                        </div>
+                      ) : null}
                     </div>
                   );
                 }
@@ -1417,78 +2091,187 @@ export function ChatPane() {
                   </div>
                 );
               })}
-              {activeTypingUsers.length ? <div className="typingPill">Typing...</div> : null}
+              {activeTypingLabel ? <div className="typingPill">{activeTypingLabel}</div> : null}
               <div ref={msgEndRef} />
+                </>
+              )}
             </div>
             {showScrollToBottom ? (
-              <button className="scrollToBottomBtn" onClick={scrollToBottom} aria-label="Scroll to latest messages">
-                {unseenNewMessages > 0 ? `${unseenNewMessages} new messages` : 'Newest'}
+              <button
+                className="scrollToBottomBtn"
+                onClick={scrollToBottom}
+                aria-label="Scroll to latest messages"
+                data-count={unseenNewMessages > 0 ? String(unseenNewMessages) : ''}
+              >
+                {unseenNewMessages > 0 ? `â†“ ${unseenNewMessages} new messages` : 'â†“'}
               </button>
             ) : null}
             </div>
 
-            <MessageComposer
-              text={text}
-              onTextChange={onComposerChange}
-              composerMedia={composerMedia}
-              onClearMedia={clearComposerMedia}
-              onSendMessage={() => void sendMessage()}
-              onAttachFile={attachFile}
-              onToggleEmoji={() => setShowEmojiPicker((value) => !value)}
-              onToggleVoice={() => void toggleVoice()}
-              showEmojiPicker={showEmojiPicker}
-              isRecording={isRecording}
-              sending={sending}
-              addEmoji={addEmoji}
-            />
+            {activeChatBlocked ? (
+              <div className="requestCard">
+                <div className="cardText">
+                  <strong>This contact is blocked</strong>
+                  <span>{activeBlockedRecord?.note || 'Messaging stays off until you unblock this contact.'}</span>
+                </div>
+                <div className="contactActions">
+                  <button type="button" className="primaryBtn smallGhost" onClick={unblockActiveContact}>
+                    Unblock
+                  </button>
+                  <button type="button" className="ghostBtn smallGhost" onClick={deleteBlockedMessages}>
+                    Delete all messages
+                  </button>
+                  <button type="button" className="ghostBtn smallGhost" onClick={deleteBlockedContact}>
+                    Delete contact
+                  </button>
+                </div>
+              </div>
+            ) : activeChatLocked && !canViewLockedChats ? null : (
+              <MessageComposer
+                text={text}
+                onTextChange={onComposerChange}
+                composerMedia={composerMedia}
+                onClearMedia={clearComposerMedia}
+                onSendMessage={() => void sendMessage()}
+                onAttachFile={attachFile}
+                onToggleEmoji={() => setShowEmojiPicker((value) => !value)}
+                onToggleVoice={() => void toggleVoice()}
+                showEmojiPicker={showEmojiPicker}
+                isRecording={isRecording}
+                sending={sending}
+                addEmoji={addEmoji}
+              />
+            )}
           </>
         ) : (
-          <div className="emptyPanel">
-            <div>
-              <h3>Your conversation hub is ready</h3>
-              <p>Select a chat to start talking, or create a contact first if your list is still empty.</p>
-              <div className="contactActions centerActions">
-                <button className="ghostBtn" onClick={openConnectModal}>
-                  Add Contact
-                </button>
-                <button
-                  className="primaryBtn"
-                  onClick={() => {
-                    if (chats.length) openChat(chats[0].id);
-                    else setInfo('Create a contact first to start chatting');
-                  }}
-                >
-                  Open first chat
-                </button>
+          <div className={chatFilter === 'archived' ? 'emptyPanel emptyPanel-quiet' : 'emptyPanel'}>
+            <div className="emptyHub">
+              <div className="cardText emptyHubLead">
+                <strong>{chatFilter === 'archived' ? 'Archived chats' : 'Select a chat to open it'}</strong>
+                <span>{chatFilter === 'archived' ? 'Choose any archived conversation from the left side.' : 'Tap any user from the left side and their conversation will open here.'}</span>
               </div>
+              {chatFilter === 'archived' ? null : (
+                <div className="emptyHubActions">
+                  <button className="emptyHubAction" type="button">
+                    <span className="emptyHubIcon emptyHubIcon-doc" aria-hidden="true" />
+                    <span>Send document</span>
+                  </button>
+                  <button className="emptyHubAction" type="button" onClick={openConnectModal}>
+                    <span className="emptyHubIcon emptyHubIcon-contact" aria-hidden="true" />
+                    <span>Add contact</span>
+                  </button>
+                  <button
+                    className="emptyHubAction"
+                    type="button"
+                    onClick={() => setInfo('DIP AI shortcut added to the home screen')}
+                  >
+                    <span className="emptyHubIcon emptyHubIcon-ai" aria-hidden="true" />
+                    <span>Open DIP AI</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
       </section>
 
+      {showChatLockSetupModal ? (
+        <div className="modalScrim" onClick={() => setShowChatLockSetupModal(false)}>
+          <div className="connectModalCard profileDetailCard" onClick={(event) => event.stopPropagation()}>
+            <div className="sectionTop">
+              <h2>Set locked chats {chatLockMode === 'pin' ? 'PIN' : 'password'}</h2>
+              <button className="ghostBtn smallGhost" onClick={() => setShowChatLockSetupModal(false)}>
+                Close
+              </button>
+            </div>
+            <p className="miniText">Before moving a chat into Locked chats, set a PIN or password and confirm it.</p>
+            <div className="tabRow tabRowSecondary authReferenceMethodTabs">
+              <button type="button" className={chatLockMode === 'pin' ? 'ghostBtn activeTab' : 'ghostBtn'} onClick={() => setChatLockMode('pin')}>
+                PIN
+              </button>
+              <button type="button" className={chatLockMode === 'password' ? 'ghostBtn activeTab' : 'ghostBtn'} onClick={() => setChatLockMode('password')}>
+                Password
+              </button>
+            </div>
+            <div className="composerInputRow">
+              <input
+                className="input"
+                type={showChatLockSecret ? 'text' : 'password'}
+                inputMode={chatLockMode === 'pin' ? 'numeric' : 'text'}
+                placeholder={chatLockMode === 'pin' ? 'Set PIN' : 'Set password'}
+                value={chatLockSecret}
+                onChange={(event) => setChatLockSecret(event.target.value)}
+              />
+              <button type="button" className="ghostBtn securityActionBtn" onClick={() => setShowChatLockSecret((current) => !current)}>
+                {showChatLockSecret ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            <div className="composerInputRow">
+              <input
+                className="input"
+                type={showChatLockConfirmSecret ? 'text' : 'password'}
+                inputMode={chatLockMode === 'pin' ? 'numeric' : 'text'}
+                placeholder={chatLockMode === 'pin' ? 'Confirm PIN' : 'Confirm password'}
+                value={chatLockConfirmSecret}
+                onChange={(event) => setChatLockConfirmSecret(event.target.value)}
+              />
+              <button type="button" className="ghostBtn securityActionBtn" onClick={() => setShowChatLockConfirmSecret((current) => !current)}>
+                {showChatLockConfirmSecret ? 'Hide' : 'Show'}
+              </button>
+              <button type="button" className="primaryBtn securityActionBtn" onClick={() => void saveChatLockCredential()}>
+                Save and lock chat
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showChatUnlockModal ? (
+        <div className="modalScrim" onClick={() => setShowChatUnlockModal(false)}>
+          <div className="connectModalCard profileDetailCard" onClick={(event) => event.stopPropagation()}>
+            <div className="sectionTop">
+              <h2>Verify locked chats</h2>
+              <button className="ghostBtn smallGhost" onClick={() => setShowChatUnlockModal(false)}>
+                Close
+              </button>
+            </div>
+            <p className="miniText">Enter your locked chats PIN or password. After verification, all locked chats and messages will be visible in this session.</p>
+            <div className="composerInputRow">
+              <input
+                className="input"
+                type={showChatUnlockSecret ? 'text' : 'password'}
+                placeholder="Enter locked chats PIN or password"
+                value={chatUnlockSecret}
+                onChange={(event) => setChatUnlockSecret(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') void verifyChatUnlockSecret();
+                }}
+              />
+              <button type="button" className="ghostBtn securityActionBtn" onClick={() => setShowChatUnlockSecret((current) => !current)}>
+                {showChatUnlockSecret ? 'Hide' : 'Show'}
+              </button>
+              <button type="button" className="primaryBtn securityActionBtn" onClick={() => void verifyChatUnlockSecret()}>
+                Verify
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {showConnectModal ? (
         <div className="modalScrim" onClick={() => setShowConnectModal(false)}>
           <div className="connectModalCard" onClick={(event) => event.stopPropagation()}>
             <div className="sectionTop">
-              <h2>Add Contact To Chat</h2>
+              <h2>Connect with someone</h2>
               <button className="ghostBtn smallGhost" onClick={() => setShowConnectModal(false)}>
                 Close
               </button>
             </div>
             <p className="miniText">
-              Search by mobile number or Gmail. When a match appears, add your saved contact name first, then send a chat request.
+              Search by mobile number or Gmail. When a match appears, send a connect request directly.
             </p>
 
             <div className="formGrid">
-              <label className="field">
-                <span>Your contact name</span>
-                <input
-                  className="input"
-                  placeholder="Enter the name you want to save"
-                  value={connectName}
-                  onChange={(event) => setConnectName(event.target.value)}
-                />
-              </label>
               <label className="field">
                 <span>Mobile number or email</span>
                 <div className="composerInputRow">
@@ -1530,33 +2313,125 @@ export function ChatPane() {
             {selectedMatch ? (
               <div className="requestCard">
                 <div className="cardText">
-                  <strong>Connection flow</strong>
+                  <strong>Connection status</strong>
                   <span>
                     {lookupResult?.existingContact
-                      ? 'You are already connected with this person.'
+                      ? 'You are already connected with this person. Open the chat from your chat list.'
                       : lookupResult?.existingRequest
                         ? lookupResult.existingRequest.direction === 'incoming'
                           ? 'This person already sent you a request. Accept it from the People section.'
-                          : 'A chat request is already pending for this person.'
-                        : contactSaved
-                          ? 'Contact saved. Send the request and wait for them to accept.'
-                          : 'Add the contact first. Then the chat request button becomes available.'}
+                          : 'A connect request is already pending for this person.'
+                        : 'Send the connect request and wait for them to accept.'}
                   </span>
                 </div>
                 <div className="contactActions">
                   <button
-                    className="ghostBtn"
-                    onClick={() => void saveMatchedContact()}
-                    disabled={connectBusy || lookupResult?.existingContact || Boolean(lookupResult?.existingRequest)}
-                  >
-                    {contactSaved ? 'Added' : 'Add contact'}
-                  </button>
-                  <button
                     className="primaryBtn"
                     onClick={() => void sendChatRequest()}
-                    disabled={connectBusy || !contactSaved || lookupResult?.existingContact || Boolean(lookupResult?.existingRequest)}
+                    disabled={connectBusy || lookupResult?.existingContact || Boolean(lookupResult?.existingRequest)}
                   >
-                    Send chat request
+                    {lookupResult?.existingRequest?.direction === 'outgoing' ? 'Sent' : 'Send connect request'}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {showNotificationsModal ? (
+        <div className="modalScrim" onClick={() => {
+          setShowNotificationsModal(false);
+        }}>
+          <div className="connectModalCard notificationCenterCard" onClick={(event) => event.stopPropagation()}>
+            <div className="requestPopupHeader">
+              <div>
+                <span className="heroEyebrow">Notifications</span>
+                <h2>All notifications</h2>
+              </div>
+              <div className="contactActions notificationCenterHeaderActions">
+                <button
+                  type="button"
+                  className="ghostBtn smallGhost notificationClearAllBtn"
+                  onClick={clearNotificationHistory}
+                  disabled={!notificationHistory.length}
+                >
+                  Clear all notifications
+                </button>
+                <button
+                  type="button"
+                  className="ghostBtn closeIconBtn"
+                  onClick={() => {
+                    setShowNotificationsModal(false);
+                  }}
+                  aria-label="Close notifications"
+                >
+                  x
+                </button>
+              </div>
+            </div>
+            <p className="miniText">Update notices, chat alerts and connection events are saved here with date and time.</p>
+            {notificationGroups.length ? (
+              <div className="notificationCenterList">
+                {notificationGroups.map(([dayLabel, entries]) => (
+                  <div key={dayLabel} className="notificationDayGroup">
+                    <div className="notificationDayLabel">{dayLabel}</div>
+                    <div className="requestStack">
+                      {entries.map((entry) => (
+                        <div key={entry.id} className="requestCard notificationCard notificationCenterItem">
+                          <div className="rowStart notificationCenterRow">
+                            <div className={`settingsItemIcon notificationKindBadge notificationKind-${entry.kind}`}>{entry.kind.slice(0, 2).toUpperCase()}</div>
+                            <div className="cardText">
+                              <strong>{entry.title}</strong>
+                              <span>{entry.detail}</span>
+                              <span>{new Date(entry.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                          </div>
+                          <div className="notificationCardTools">
+                            {entry.kind === 'update' && entry.updateBuildId ? (
+                              <div className="contactActions">
+                                {entry.updateStatus !== 'accepted' ? (
+                                  <button type="button" className="primaryBtn smallGhost" onClick={() => applyStoredUpdate(entry.updateBuildId!)}>
+                                    Update
+                                  </button>
+                                ) : null}
+                                {entry.updateStatus === 'pending' ? (
+                                  <button type="button" className="ghostBtn smallGhost" onClick={() => dismissStoredUpdate(entry.updateBuildId!)}>
+                                    Reject
+                                  </button>
+                                ) : null}
+                              </div>
+                            ) : null}
+                            <button
+                              type="button"
+                              className="ghostBtn smallGhost notificationDeleteBtn"
+                              onClick={() => removeNotificationEntry(entry.id)}
+                              aria-label="Delete notification"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="compactEmpty requestEmptyCard">No notifications saved yet.</div>
+            )}
+            {updateNotice ? (
+              <div className="requestCard notificationCenterFooterCard">
+                <div className="cardText">
+                  <strong>Latest update is still available</strong>
+                  <span>Version {updateNotice.latestBuildId} can be applied from here any time.</span>
+                </div>
+                <div className="contactActions">
+                  <button type="button" className="primaryBtn smallGhost" onClick={() => applyStoredUpdate(updateNotice.latestBuildId)}>
+                    Update
+                  </button>
+                  <button type="button" className="ghostBtn smallGhost" onClick={() => dismissStoredUpdate(updateNotice.latestBuildId)}>
+                    Reject
                   </button>
                 </div>
               </div>
@@ -1596,6 +2471,46 @@ export function ChatPane() {
                 <span>{detailUser.bio || detailUser.statusText || 'No extra details yet.'}</span>
               </div>
             </div>
+            <div className="accountActionRow">
+              <button type="button" className="ghostBtn smallGhost" onClick={() => markDetailUserSafety('blocked')}>
+                Block contact
+              </button>
+              <button type="button" className="ghostBtn smallGhost" onClick={() => markDetailUserSafety('reported')}>
+                Report contact
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {blockTarget ? (
+        <div className="modalScrim" onClick={() => setBlockTarget(null)}>
+          <div className="connectModalCard profileDetailCard" onClick={(event) => event.stopPropagation()}>
+            <div className="sectionTop">
+              <h2>Block {blockTarget.name}?</h2>
+              <button className="ghostBtn smallGhost" onClick={() => setBlockTarget(null)}>
+                Close
+              </button>
+            </div>
+            <p className="miniText">Confirm the block and explain why you are blocking this contact.</p>
+            <label className="field">
+              <span>Why are you blocking this contact?</span>
+              <textarea
+                className="input"
+                rows={4}
+                placeholder="Explain why you want to block this user"
+                value={blockReason}
+                onChange={(event) => setBlockReason(event.target.value)}
+              />
+            </label>
+            <div className="accountActionRow">
+              <button type="button" className="ghostBtn smallGhost" onClick={() => setBlockTarget(null)}>
+                Cancel
+              </button>
+              <button type="button" className="primaryBtn smallGhost" onClick={confirmBlockTarget}>
+                Confirm block
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -1634,6 +2549,55 @@ export function ChatPane() {
           </div>
         </div>
       ) : null}
+
+      {reportDetailTarget ? (
+        <div className="modalScrim" onClick={() => setReportDetailTarget(null)}>
+          <div className="connectModalCard profileDetailCard" onClick={(event) => event.stopPropagation()}>
+            <div className="sectionTop">
+              <h2>Report {reportDetailTarget.name}</h2>
+              <button className="ghostBtn smallGhost" onClick={() => setReportDetailTarget(null)}>
+                Close
+              </button>
+            </div>
+            <p className="miniText">Choose the type of report you want to make.</p>
+            <label className="field">
+              <span>Explain something about this report</span>
+              <textarea
+                className="input"
+                rows={4}
+                placeholder="Write more details about spam, scam, behaviour or fraud"
+                value={reportReasonDetail}
+                onChange={(event) => setReportReasonDetail(event.target.value)}
+              />
+            </label>
+            <div className="requestStack">
+              {reportReasons.map((reason) => (
+                <button key={reason} type="button" className="requestCard chatMatchCard" onClick={() => void submitDetailReportReason(reason)}>
+                  <div className="cardText">
+                    <strong>{reason}</strong>
+                    <span>{reason === 'Spam messages' ? 'Repeated spam or promotional messages.' : reason === 'Fraud or scam' ? 'Fraud, money scam, cheating or fake payment attempt.' : reason === 'Abusive behaviour' ? 'Harassment, threats or abusive behaviour.' : reason === 'Unwanted messages' ? 'Messages you do not want from this contact.' : 'Fake identity or misleading profile details.'}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="accountActionRow">
+              <button type="button" className="ghostBtn smallGhost" onClick={() => {
+                setReportDetailTarget(null);
+                setReportReasonDetail('');
+              }}>
+                x
+              </button>
+              <button type="button" className="ghostBtn smallGhost" onClick={() => {
+                setBlockTarget(reportDetailTarget);
+                setReportDetailTarget(null);
+              }}>
+                Block contact
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
+
