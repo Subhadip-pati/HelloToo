@@ -286,10 +286,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [appLockConfig.biometricCredentialId, biometricSupported, unlockApp]);
 
   const getApiUrl = useCallback(() => {
-    const appProtocol = window.location.protocol?.startsWith('http') ? window.location.protocol : 'http:';
-    const appHostname = window.location.hostname && window.location.hostname !== '' && window.location.hostname !== 'chrome-error' ? window.location.hostname : 'localhost';
-    return import.meta.env.VITE_API_URL ?? `${appProtocol}//${appHostname}:8788`;
-  }, []);
+  const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+
+  if (configuredApiUrl) {
+    return configuredApiUrl.replace(/\/+$/, '');
+  }
+
+  const appProtocol =
+    window.location.protocol?.startsWith('http')
+      ? window.location.protocol
+      : 'http:';
+
+  const appHostname =
+    window.location.hostname &&
+    window.location.hostname !== '' &&
+    window.location.hostname !== 'chrome-error'
+      ? window.location.hostname
+      : 'localhost';
+
+  if (appHostname === 'helloto.onrender.com') {
+    return `${appProtocol}//${appHostname}`;
+  }
+
+  return `${appProtocol}//${appHostname}:8788`;
+}, []);
   const serverBaseUrl = getApiUrl();
 
   useEffect(() => {
