@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/fix-esm-imports.mjs",
-    "start": "node dist/src/index.js",
+   "build": "npx prisma generate && tsc -p tsconfig.json && node scripts/fix-esm-imports.mjs",
+   "start": "node dist/src/index.js",
     "dev": "node --experimental-transform-types src/index.ts",
     "dev:watch": "tsx watch src/index.ts",
     "db:reset:dev": "node scripts/reset-dev-db.mjs",
